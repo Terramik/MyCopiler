@@ -1,70 +1,22 @@
-# import os
-# import sys
-# import subprocess
-# from .Tokenize import tokenize_file
-# from .CollapseRaw import collapse_raw
-# from .ProcessRaw import process_raw
-# from .Analyze import analyze
-# from .Transform import transform
 from .Modules import make_modules
 from .TransferToC import transfer_to_c
 from pathlib import Path
 from ..Definitions.Exceptions import *
 from .Errors import print_error_location
 import shutil
-# from .Visualizer import print_all, save_as_svg
-# from .ProcessRaw.Expression import process_expression
+
+
+path_to_scripts = (Path(__file__).resolve().parent.parent / 'scripts')
+
 
 # path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts')
 
-# blob
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V5\scripts\blob\main.txt')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V5\scripts\blob\result')
-
-# game if life
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V5\scripts\game_of_life\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V5\scripts\game_of_life\result')
-
-# some classes
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\classes\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\classes\result')
-
-# some enums
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\SomeEnums\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\SomeEnums\result')
-
-# q
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\Math\Quaternions.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\Math\result')
-
-# v
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\Math\Vectors.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\Math\result')
 
 # m
-file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\Math\Matrices.mylang')
-result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\result')
+file_path = path_to_scripts / r'Better\Math\Matrices.mylang'
 
-# cube
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\3D\Cube\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\3D\Cube\result')
 
-# cb_lst
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\3D\Cube\main_last.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\3D\Cube\result')
-
-# blob2
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\blob2\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\blob2\result')
-
-# rays
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\RayCasts\V1\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\Better\RayCasts\V1\result')
-
-# calc
-# file_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\calculatator\main.mylang')
-# result_path = Path(r'C:\Coding\Python\Two\Test\TheLanguage\test\V6\scripts\calculatator\result')
-
+result_path = path_to_scripts / r'result'
 
 
 if not file_path.exists():
