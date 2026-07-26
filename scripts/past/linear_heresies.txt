@@ -1,0 +1,188 @@
+
+# чучуть векторов
+
+def v_print(v (float64[]) ) {
+    var n uint64 = lenof v; var i uint64 = 0;
+    print_s("[");
+    while i < n {
+        print_f("%9.3f ", v[i]);
+        i = i + 1;
+    }
+    print_s("]\n");
+}
+
+def v_add(v1 (float64[]), v2 (float64[]), vr (float64[])) {
+    var n uint64 = lenof v1; var i uint64 = 0;
+    while i < n {
+        vr[i] = v1[i] + v2[i];
+        i = i + 1;
+    }
+}
+
+def v_sub(v1 (float64[]), v2 (float64[]), vr (float64[])) {
+    var n uint64 = lenof v1; var i uint64 = 0;
+    while i < n {
+        vr[i] = v1[i] - v2[i];
+        i = i + 1;
+    }
+}
+
+def v_mul(v1 (float64[]), v2 (float64[]), vr (float64[])) {
+    var n uint64 = lenof v1; var i uint64 = 0;
+    while i < n {
+        vr[i] = v1[i] * v2[i];
+        i = i + 1;
+    }
+}
+
+def v_dot(v1 (float64[]), v2 (float64[])) -> (float64) {
+    var n uint64 = lenof v1; var i uint64 = 0;
+    var accumulator float64 = 0.0;
+    while i < n {
+        accumulator = accumulator + v1[i] * v2[i];
+        i = i + 1;
+    }
+    return accumulator;
+}
+
+def v_scale(v (float64[]), scale float64, vr (float64[])) {
+    var n uint64 = lenof v; var i uint64 = 0;
+    while i < n {
+        vr[i] = v[i] * scale;
+        i = i + 1;
+    }
+}
+
+# тэперь матрицы
+
+def m_print(m (float64[,])) {
+    var n1 uint64 = lenof m; var i1 uint64 = 0;
+    var n2 uint64 = lenof (m[0]); var i2 uint64;
+    while i1 < n1 {
+        if i1 == 0 {
+            print_s("[[");
+        } else {
+            print_s(" [");
+        }
+
+        i2 = 0;
+        while i2 < n2 {
+            print_f("%9.3f ", m[i2][i1]);
+            i2 = i2 + 1;
+        }
+        i1 = i1 + 1;
+
+        if i1 == 0 {
+            print_s("]\n");
+        } else {
+            print_s("]]\n");
+        }
+    }
+}
+
+# def m_scale(m1 (float64[,]), scale float64, mr (float64[,])) {
+#     var n1 uint64 = lenof m1; var i1 uint64 = 0;
+#     var n2 uint64 = lenof (m1[0]); var i2 uint64;
+#     var row1 (float64[]); var rowr (float64[]);
+#     while i1 < n1 {
+#         i2 = 0;
+#         row1 = m1[i1]; rowr = mr[i1];
+#         while i2 < n2 {
+#             rowr[i2] = row1[i2] * scale;
+#             i2 = i2 + 1;
+#         }
+#         i1 = i1 + 1;
+#     }
+# }
+
+
+def m_scale(m1 (float64[,]), scale float64, mr (float64[,])) {
+    # обработаем это как 1 плоский список
+    var n uint64 = (lenof m1) * (lenof (m1[0]));
+    var m1f (float64[]) = m1[:n];
+    var mrf (float64[]) = mr[:n];
+    var i uint64 = 0;
+    while i < n {
+        mrf[i] = m1f[i] * scale;
+        i = i + 1;
+    }
+}
+
+
+def m_mul(m1 (float64[,]), m2 (float64[,]), mr (float64[,])) {
+    # m1 MxI, m2 IxN, mr MxN, m1 * m2 = mr, всё как обычно
+    var M uint64 = lenof m1;
+    var I uint64 = lenof (m1[0]);
+    var N uint64 = lenof (m2[0]);
+
+    var i1 uint64 = 0;
+    while i1 < M {
+        var i2 uint64 = 0;
+        while i2 < N {
+            var accml float64 = 0;
+            var i uint64 = 0;
+            while i < I {
+                accml = accml + m1[i1][i] * m2[i][i2];
+                i = i + 1;
+            }
+            mr[i2][i1] = accml;
+            i2 = i2 + 1;
+        }
+        i1 = i1 + 1;
+    }
+}
+
+def m_apply(m (float64[,]), v (float64[]), vr (float64[])) {
+    var M uint64 = lenof m;
+    var N uint64 = lenof (m[0]);
+
+    var i1 uint64 = 0;
+    while i1 < M {
+        var accml float64 = 0;
+        var i2 uint64 = 0;
+        var m_row (float64[]) = m[i1];
+        while i2 < M {
+            accml = accml + m_row[i2] * v[i2];
+            i2 = i2 + 1;
+        }
+        vr[i1] = accml;
+        i1 = i1 + 1;
+    }
+}
+
+def main() -> (int64)
+{
+    var v1 (float64[3]) = [1.1, 2.2, 3.3];
+    var v2 (float64[3]) = [1.1, 2.2, 3.3];
+    var vr (float64[3]) = [1.1, 2.2, 3.3];
+
+    v_add(v1[:], v2[:], vr[:]);
+    v_print(vr[:]);
+    v_mul(v1[:], v1[:], vr[:]);
+    v_print(vr[:]);
+    v_scale(v1[:], 10, vr[:]);
+    v_print(vr[:]);
+    print_f("%12.3f\n", v_dot(v1[:], v2[:]));
+
+    print_s("M\n");
+
+    var m1 (float64[3][3]) = [[0, 1, 2], [0.0, 3.0, 0.1], [1.0, 0.0, 2.0]];
+    var mr (float64[3][3]);
+    m_print(m1[:]);
+    m_scale(m1[:], 3.3, mr[:]);
+    m_print(mr[:]);
+    m_mul(m1[:], m1[:], mr[:]);
+    m_print(mr[:]);
+    m_apply(m1[:], v1[:], vr[:]);
+    v_print(vr[:]);
+
+    print_s("E\n");
+    print_i("%12i\n", 0b1010);
+    print_i("%12i\n", 0xff);
+    print_c("%c\n", 'a');
+    print_i("%12i\n", 'a');
+
+    return 0;
+}
+
+

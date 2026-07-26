@@ -1,0 +1,104 @@
+from std/math import sqrt, abs, cos, sin, PI;
+from std/testing import assert;
+from std/io import IOStream;
+
+
+export Quaternion;
+
+
+class Quaternion {
+    {
+        w float64;
+        x float64;
+        y float64;
+        z float64;
+    }
+
+    def __init__(self Quaternion, w float64, x float64, y float64, z float64) -> (Quaternion) {
+        self.w = w;
+        self.x = x;
+        self.y = y;
+        self.z = z;
+        return self;
+    }
+
+    def print(self Quaternion, stream IOStream) {
+        stream.print_f("[%12.3f, ", self.w);
+        stream.print_f("%12.3fi, ", self.x);
+        stream.print_f("%12.3fj, ", self.y);
+        stream.print_f("%12.3fk]\n", self.z);
+    }
+
+    def __mul__(self Quaternion, other Quaternion) -> (Quaternion) {
+        return Quaternion(
+            self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z,
+            self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
+            self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
+            self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w
+        );
+    }
+
+    def norm(self Quaternion) -> (float64) {
+        return sqrt(
+            self.x * self.x + 
+            self.y * self.y + 
+            self.z * self.z + 
+            self.w * self.w
+        );
+    }
+
+    def normalize(self Quaternion) -> (Quaternion) {
+        var norm float64 = self.norm();
+        if abs(norm) > 1e-6 {
+            norm = 1 / norm;
+            return Quaternion(
+                self.w * norm,
+                self.x * norm,
+                self.y * norm,
+                self.z * norm
+            );
+        }
+        return self;
+    }
+
+    def conj(self Quaternion) -> (Quaternion) {
+        return Quaternion(
+            self.w,
+            -self.x,
+            -self.y,
+            -self.z
+        );
+    }
+
+    def from_vector(vec float64[]) -> (Quaternion) {
+
+        return Quaternion(
+            0, vec[0], vec[1], vec[2]
+        );
+    }
+
+    def to_vector(self Quaternion, vec float64[]) {
+        vec[0] = self.x;
+        vec[1] = self.y;
+        vec[2] = self.z;
+    }
+
+    def apply(self Quaternion, vec float64[]) {
+        assert(lenof vec == 3, "Bad vector");
+        var q Quaternion = Quaternion.from_vector(vec);
+        q = self * q * self.conj();
+        q.to_vector(vec);
+    }
+
+    def from_axis_and_angle(angle float64, axis float64[3]) -> (Quaternion) {
+        angle = angle / 2;
+        var sin_ float64 = sin(angle);
+        return Quaternion(
+            cos(angle),
+            axis[0] * sin_,
+            axis[1] * sin_,
+            axis[2] * sin_
+        ).normalize();
+    }
+}
+

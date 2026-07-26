@@ -1,0 +1,26 @@
+
+
+
+export all;
+
+
+enum Operators {
+    add;
+    sub;
+    mul;
+    div;
+    pow;
+    bracket_open;
+    bracket_close;
+    none;
+}
+
+enum Associativity {
+    left;
+    right;
+}
+
+
+
+
+

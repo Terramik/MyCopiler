@@ -1,0 +1,224 @@
+from std/io import stdout;
+from ../defines import all;
+from ../stacks import StackFloat, StackOperators;
+from std/testing import abort;
+from std/math import abs, pow;
+
+
+# no scanf allowed
+
+def is_number(ch uint8) -> (bool) {
+    return '9' >= ch >= '0';
+}
+
+def parse_number(str uint8[], ip uint64*) -> (float64) {
+    var i uint64 = ip*;
+    var val float64 = 0;
+    var point_reached bool = false;
+    var shift float64 = 0.1;
+
+    while i < lenof str {
+        var ch uint8 = str[i];
+
+        if is_number(ch) {
+            if not point_reached {
+                val = val * 10 + (ch - '0');
+            } else {
+                val = val + (ch - '0') * shift;
+                shift = shift / 10;
+            }
+        } elif ch == '.' and not point_reached {
+            point_reached = true;
+        } else {
+            break;
+        }
+        i = i + 1;
+    }
+
+    ip* = i;
+    return val;
+}
+
+
+# shifting yard 
+
+
+def symbol_to_operator(symbol uint8) -> (Operators) {
+    if symbol == '+' {
+        return Operators.add;
+    } elif symbol == '-' {
+        return Operators.sub;
+    } elif symbol == '*' {
+        return Operators.mul;
+    } elif symbol == '/' {
+        return Operators.div;
+    } elif symbol == '^' {
+        return Operators.pow;
+    } elif symbol == '(' {
+        return Operators.bracket_open;
+    } elif symbol == ')' {
+        return Operators.bracket_close;
+    } else {
+        return Operators.none;
+    }
+}
+
+def operator_to_priority(op Operators) -> (uint32) {
+    if op == Operators.add {
+        return 10;
+    } elif op == Operators.sub {
+        return 10;
+    } elif op == Operators.mul {
+        return 5;
+    } elif op == Operators.div {
+        return 5;
+    } elif op == Operators.pow {
+        return 1;
+    } else {
+        stdout.puts("somethih go whorg");
+        abort();
+    }
+}
+
+def operator_to_associativity(op Operators) -> (Associativity) {
+    if op == Operators.add {
+        return Associativity.left;
+    } elif op == Operators.sub {
+        return Associativity.left;
+    } elif op == Operators.mul {
+        return Associativity.left;
+    } elif op == Operators.div {
+        return Associativity.left;
+    } elif op == Operators.pow {
+        return Associativity.right;
+    } else {
+        stdout.puts("something go whorg");
+        abort();
+    }
+}
+
+
+def should_we_pop_it(head Operators, to_put Operators) -> (bool) {
+    if head == Operators.bracket_open {
+        return false;
+    }
+    if operator_to_associativity(to_put) == Associativity.left {
+        return operator_to_priority(head) < operator_to_priority(to_put);
+    } else {
+        return operator_to_priority(head) <= operator_to_priority(to_put);
+    }
+}
+
+
+def pop_it(operands StackFloat*, operators StackOperators*) {
+    var op Operators = operators->pop();
+    if operands->elements_num < 2 {
+        stdout.puts("not enough operands");
+        abort();
+    }
+    var right float64 = operands->pop();
+    var left float64 = operands->pop();
+
+    if op == Operators.add {
+        operands->put(left + right);
+    } elif op == Operators.sub {
+        operands->put(left - right);
+    } elif op == Operators.mul {
+        operands->put(left * right);
+    } elif op == Operators.div {
+        if abs(right) < 1e-6 {
+            stdout.puts("zero division");
+            abort();
+        }
+        operands->put(left / right);
+    } elif op == Operators.pow {
+        if left < 0 {
+            stdout.puts("imaginary numbers - imaginary");
+            abort();
+        } elif abs(left) < 1e-6 and abs(right) < 1e-6 {
+            stdout.puts("uncertainties, uncertainties");
+            abort();
+        }
+        operands->put(pow(left, right));
+    }
+}
+
+
+def put_operator(operands StackFloat*, operators StackOperators*, operator Operators) {
+    if operators->elements_num == 0 {
+        operators->put(operator);
+    } else {
+        var first Operators = operators->head();
+        while should_we_pop_it(first, operator) {
+            pop_it(operands, operators);
+            if operators->elements_num == 0 { break; }
+            first = operators->head();
+        }
+        operators->put(operator);
+    }
+}
+
+
+def main() -> (int64) {
+    var to_parse uint8[] = "100*2";
+
+    var operands StackFloat = StackFloat(10);
+    var operators StackOperators = StackOperators(10);
+
+    var i uint64 = 0;
+    while i < lenof to_parse {
+        var ch uint8 = to_parse[i];
+        if is_number(ch) {
+            operands.put(parse_number(to_parse, i&));
+            # stdout.print_f("%f\n", operands.data[operands.elements_num-1]);
+        } else {
+            var opr Operators = symbol_to_operator(ch);
+            if opr == Operators.none {
+                stdout.puts("Bad input");
+                del operands; del operators;
+                return 1;
+            }
+            if opr == Operators.bracket_close {
+                var good bool = false;
+                while operators {
+                    if operators.head() == Operators.bracket_open {
+                        operators.pop();
+                        good = true;
+                        break;
+                    }
+                    pop_it(operands&, operators&);
+                }
+                if not good {
+                    stdout.puts("unopened bracket");
+                    del operands; del operators;
+                    return 1;
+                }
+            } elif opr == Operators.bracket_open {
+                operators.put(opr);
+            } else {
+                put_operator(operands&, operators&, opr);
+            }
+
+            i = i + 1;
+        }
+    }
+    while operators {
+        if operators.head() == Operators.bracket_open {
+            stdout.puts("unclosed bracket");
+            del operands; del operators;
+            return 1;
+        }
+        pop_it(operands&, operators&);
+    }
+
+    if operands.elements_num != 1 {
+        stdout.puts("nonsingle resulf");
+        del operands; del operators;
+        return 1;
+    }
+
+    stdout.print_f("Result: %f", operands.pop());
+
+    return 0;
+}
+

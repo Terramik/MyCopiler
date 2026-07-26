@@ -1,0 +1,365 @@
+from ../defines import all;
+from std/io import stdout;
+from std/mem import alloc, free, NULL;
+from std/time import sleep, now, NS;
+from std/math import floor, ceil, round, clamp;
+
+
+class Pixsel {
+    {
+        symbol int8;
+        dist float64;
+    }
+
+    def __init__(self Pixsel, symbol int8, dist float64) -> (Pixsel) {
+        self.symbol = symbol; 
+        self.dist = dist;
+        return self;
+    }
+}
+
+
+class Canvas {
+    {
+        canvas Pixsel[,];
+    }
+
+    def __init__(self Canvas) -> (Canvas) {return self;}
+    
+    def init(self Canvas*) -> (bool) {
+        var allocated int8* = alloc(CAM_SIZE_X * CAM_SIZE_Y * sizeof Pixsel);
+        if allocated == NULL {
+            return false;
+        }
+        self->canvas = (allocated as Pixsel*)[0:CAM_SIZE_X, CAM_SIZE_Y];
+        return true;
+    }
+
+    def __del__(self Canvas) {
+        free(self.canvas as int8*);
+    }
+
+    def clean(self Canvas*) {
+        var Yi int64 = 0; var Xi int64;
+        var canvas_row Pixsel[];
+
+        while Yi < CAM_SIZE_Y {
+            canvas_row = self->canvas[Yi];
+            Xi = 0;
+            while Xi < CAM_SIZE_X {
+                (canvas_row[Xi]).symbol = ' ';
+                (canvas_row[Xi]).dist = 1e9;
+                Xi = Xi + 1;
+            }
+            Yi = Yi + 1;
+        }
+    }
+
+    def print(self Canvas) {
+        var Yi int64 = 0; var Xi int64;
+        var canvas_row Pixsel[];
+
+        while Yi < CAM_SIZE_Y {
+            canvas_row = self.canvas[Yi];
+            Xi = 0;
+            while Xi < CAM_SIZE_X {
+                stdout.putc((canvas_row[Xi]).symbol);
+                Xi = Xi + 1;
+            }
+            stdout.putc('\n');
+            Yi = Yi + 1;
+        }
+    }
+}
+
+
+enum ProjectedPolygonType {
+    Full;
+    FlatUp;
+    FlatDown;
+}
+
+class ProjectedPolygon {
+    {
+        bad bool;
+        is_max_min_left bool;
+        symbol int8;
+        type ProjectedPolygonType;
+        dist_equation float64[3];
+        y_max int64;
+        y_mid int64;
+        y_min int64;
+        equation_max_mid float64[2];
+        equation_mid_min float64[2];
+        equation_max_min float64[2];
+    }
+
+    def __init__(self ProjectedPolygon, symbol int8, indexes int64[3], pvertexes float64[,]) -> (ProjectedPolygon) {
+        # vertex is [x coordinat, y coordinat, and d - distance from plane]
+        var vertex1 float64[] = pvertexes[indexes[0]];
+        var vertex2 float64[] = pvertexes[indexes[1]];
+        var vertex3 float64[] = pvertexes[indexes[2]];
+        # lets find thing that from xy get us d
+        {
+            var mtr float64[3][3] = [
+                [vertex1[0], vertex1[1], 1],
+                [vertex2[0], vertex2[1], 1],
+                [vertex3[0], vertex3[1], 1]
+            ];
+            var mtr_inv float64[3][3];
+            if not MatrixLib.inv(mtr[:], mtr_inv[:]) {
+                self.bad = true;
+                return self;
+            }
+            var res_vec float64[3] = [
+                vertex1[2], vertex2[2], vertex3[2]
+            ];
+            MatrixLib.apply(mtr_inv[:], res_vec[:], self.dist_equation[:]);
+        }
+        # now, calc type of treeangle and equation for sides
+        {
+            var to_sort float64[2][3] = [
+                [vertex1[0], vertex1[1]],
+                [vertex2[0], vertex2[1]],
+                [vertex3[0], vertex3[1]]
+            ];
+            # time for bubbles
+            if to_sort[0][1] < to_sort[1][1] {
+                to_sort[0], to_sort[1] = to_sort[1], to_sort[0];
+            } if to_sort[1][1] < to_sort[2][1] {
+                to_sort[1], to_sort[2] = to_sort[2], to_sort[1];
+            } if to_sort[0][1] < to_sort[1][1] {
+                to_sort[0], to_sort[1] = to_sort[1], to_sort[0];
+            }
+            # now, to_sort[0].y max(down), to_sort[2].y min(up)
+            self.y_max = clamp(ceil(to_sort[0][1]), 0, CAM_SIZE_Y + 1);
+            self.y_mid = clamp(ceil(to_sort[1][1]), 0, CAM_SIZE_Y + 1);
+            self.y_min = clamp(floor(to_sort[2][1]), 0, CAM_SIZE_Y + 1);
+
+            # now, type and eq cacl
+            var calc_max_mid bool = true;
+            var calc_mid_min bool = true;
+
+            #FlatDown 
+            if round(self.y_max) == round(self.y_mid) {
+                self.type = ProjectedPolygonType.FlatDown;
+                calc_max_mid = false;
+            # FlatUp
+            } elif round(self.y_mid) == round(self.y_min) {
+                self.type = ProjectedPolygonType.FlatUp;
+                calc_mid_min = false;
+            } else {
+                self.type = ProjectedPolygonType.Full;
+            }
+
+            def calc_thing(p1 float64[2], p2 float64[2], res float64[]) {
+                var mtr float64[2][2] = [
+                    [round(p1[1]), 1], [round(p2[1]), 1]
+                ];
+                var mtri float64[2][2];
+                MatrixLib.inv(mtr[:], mtri[:]);
+
+                var vec float64[2] = [
+                    round(p1[0]), round(p2[0])
+                ];
+                MatrixLib.apply(mtri[:], vec[:], res);
+                #res[1] = res[1] + 0.5;
+            }
+
+            # calc eq
+            calc_thing(to_sort[0], to_sort[2], self.equation_max_min[:]);
+            if calc_max_mid {
+                calc_thing(to_sort[0], to_sort[1], self.equation_max_mid[:]);
+            }
+            if calc_mid_min {
+                calc_thing(to_sort[1], to_sort[2], self.equation_mid_min[:]);
+            }
+            # and on what side max_min 
+            {
+                var min_max float64[2] = [to_sort[0][0] - to_sort[2][0], to_sort[0][1] - to_sort[2][1]];
+                var min_mid float64[2] = [to_sort[1][0] - to_sort[2][0], to_sort[1][1] - to_sort[2][1]];
+                if min_max[0] * min_mid[1] - min_max[1] * min_mid[0] < 0 {
+                    self.is_max_min_left = true;
+                } else {
+                    self.is_max_min_left = false;
+                }
+            }
+        }
+
+        self.bad = false;
+        self.symbol = symbol;
+        return self;
+    }
+
+    def write(self ProjectedPolygon, canvas Canvas) {
+        if self.bad {
+            return;
+        }
+
+        var Yi int64 = self.y_min; var Xi int64; var X int64;
+        var canvas_row Pixsel[];
+
+        if self.type != ProjectedPolygonType.FlatUp {
+            while Yi < self.y_mid + 1 {
+                canvas_row = canvas.canvas[Yi];
+                # calc borders 
+                {
+                    var t1 float64 = round(clamp(self.equation_max_min[0] * Yi + self.equation_max_min[1], 0, CAM_SIZE_X - 1));
+                    var t2 float64 = round(clamp(self.equation_mid_min[0] * Yi + self.equation_mid_min[1], 0, CAM_SIZE_X - 1));
+                    if self.is_max_min_left {
+                        Xi = t1; X = t2 + 1;
+                    } else {
+                        Xi = t2; X = t1 + 1;
+                    }
+                }
+                # write itself
+                while Xi < X {
+                    var dist float64 = self.dist_equation[0] * Xi + self.dist_equation[1] * Yi + self.dist_equation[2];
+                    if dist < (canvas_row[Xi]).dist {
+                        (canvas_row[Xi]).dist = dist;
+                        (canvas_row[Xi]).symbol = self.symbol;
+                    }
+                    Xi = Xi + 1;
+                }
+                Yi = Yi + 1;
+            }
+        }
+        if self.type != ProjectedPolygonType.FlatDown {
+            while Yi < self.y_max + 1 {
+                canvas_row = canvas.canvas[Yi];
+                {
+                    var t1 float64 = round(clamp(self.equation_max_min[0] * Yi + self.equation_max_min[1], 0, CAM_SIZE_X - 1));
+                    var t2 float64 = round(clamp(self.equation_max_mid[0] * Yi + self.equation_max_mid[1], 0, CAM_SIZE_X - 1));
+                    if self.is_max_min_left {
+                        Xi = t1; X = t2 + 1;
+                    } else {
+                        Xi = t2; X = t1 + 1;
+                    }
+                }
+                while Xi < X {
+                    var dist float64 = self.dist_equation[0] * Xi + self.dist_equation[1] * Yi + self.dist_equation[2];
+                    if dist < (canvas_row[Xi]).dist {
+                        (canvas_row[Xi]).dist = dist;
+                        (canvas_row[Xi]).symbol = self.symbol;
+                    }
+                    Xi = Xi + 1;
+                }
+                Yi = Yi + 1;
+            }
+        }
+    }
+}
+
+
+class Polygon {
+    {
+        symbol int8;
+        idxs int64[3];
+    }
+
+    def __init__(self Polygon, symbol int8, indexes int64[3]) -> (Polygon) {
+        self.symbol = symbol;
+        self.idxs = indexes;
+        return self;
+    }
+
+    def project(self Polygon, pvertexes float64[,]) -> (ProjectedPolygon) {
+        return ProjectedPolygon(self.symbol, self.idxs, pvertexes);
+    }
+
+}
+
+
+def project_vertexes(vertexes float64[,], pvertexes float64[,], q Quaternion) {
+    var i int64 = 0;
+    var vertex float64[];
+    var pvertex float64[];
+    while i < lenof vertexes {
+        vertex = vertexes[i];
+
+        var tmp float64[3] = [
+            vertex[0],
+            vertex[1],
+            vertex[2]
+        ];
+        q.apply(tmp[:]);
+
+        var dist float64 = tmp[0] - POV_DIST;
+        var scale float64 = POV_EYE_DIST / (dist + POV_EYE_DIST);
+
+        pvertex = pvertexes[i];
+
+        pvertex[0] = (tmp[1] * scale) / POV_SIZE_X * CAM_SIZE_X + CAM_SIZE_X / 2.0;
+        pvertex[1] = -(tmp[2] * scale) / POV_SIZE_Y * CAM_SIZE_Y + CAM_SIZE_Y / 2.0;
+        pvertex[2] = dist;
+
+        i = i + 1;
+    }
+}
+
+
+def main() -> (int64) {
+    var canvas Canvas = Canvas();
+
+    if not canvas.init() {
+        stdout.puts("Critical error on memory allocation");
+        return 1;
+    }
+
+    var vertexes float64[3][4] = [
+        [1.0, 1.0, 1.0], 
+        [1.0, -1.0, -1.0], 
+        [-1.0, 1.0, -1.0],
+        [-1.0, -1.0, 1.0]
+    ];
+    var vertexess float64[,] = vertexes[:3,4];
+
+    var pvertexes float64[3][4];
+    var pvertexess float64[,] = pvertexes[:3,4];
+
+    var polygons Polygon[4] = [
+        Polygon('a', [0, 1, 2]),
+        Polygon('b', [1, 2, 3]),
+        Polygon('c', [2, 3, 0]),
+        Polygon('d', [3, 0, 1])
+    ];
+
+    var ppols ProjectedPolygon[4];
+
+    var q Quaternion = Quaternion(1,0,0,0);
+
+    while true {
+        var last_time int64 = now();
+
+        project_vertexes(vertexess, pvertexess, q);
+        q = q * Q_ROTATE;
+
+        var i int64 = 0;
+        while i < 4 {
+            ppols[i] = (polygons[i]).project(pvertexess);
+            i = i + 1;
+        }
+
+        canvas.clean();
+
+        i = 0;
+        while i < 4 {
+            (ppols[i]).write(canvas);
+            i = i + 1;
+        }
+
+        stdout.puts("\033[H\033[J");
+        canvas.print();
+
+        var dt int64 = NS / FPS - (now() - last_time);
+        if dt > 0 {
+            sleep(dt);
+        }
+    }
+
+    return 0;
+}
+
+
+
+

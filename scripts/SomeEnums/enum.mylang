@@ -1,0 +1,8 @@
+
+enum Blobs {
+    A;
+    B;
+    C;
+}
+
+export all;

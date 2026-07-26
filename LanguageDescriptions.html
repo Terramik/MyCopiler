@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Описание языка (спецификация)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1rem;
+            line-height: 1.6;
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+        h1, h2, h3, h4 {
+            margin: 0.5rem 0 0.25rem 0;
+            color: #f0f0f0;
+        }
+        .toc {
+            background: #2a2a2a;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 1px solid #444;
+        }
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .toc li {
+            margin: 0.25rem 0;
+        }
+        .toc ul ul {
+            padding-left: 1rem;
+        }
+        .toc ul ul ul {
+            padding-left: 1.5rem;
+        }
+        .toc a {
+            text-decoration: none;
+            color: #6ea8fe;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+            color: #a0c4ff;
+        }
+        details {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            margin: 0.75rem 0;
+            padding: 0.5rem 1rem;
+            transition: background 0.2s;
+        }
+        details summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #6ea8fe;
+            font-size: 1.1rem;
+        }
+        details details {
+            border-left: 3px solid #555;
+            margin-left: 0.5rem;
+            background: #222;
+            border-color: #555;
+        }
+        details details summary {
+            font-weight: 600;
+            color: #5b8cdf;
+            font-size: 1rem;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 0.75rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            border-left: 4px solid #6ea8fe;
+            color: #d4d4d4;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: #2d2d2d;
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #d4d4d4;
+        }
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+        hr {
+            border: 0;
+            border-top: 2px dashed #444;
+            margin: 1.5rem 0;
+        }
+        a {
+            color: #6ea8fe;
+        }
+        a:hover {
+            color: #a0c4ff;
+        }
+        footer {
+            color: #888;
+        }
+        .toc a {
+            color: #6ea8fe;
+        }
+        .toc a:hover {
+            color: #a0c4ff;
+        }
+        p code, li code, summary code {
+            background: #2d2d2d;
+            color: #d4d4d4;
+        }
+        details summary {
+            color: #6ea8fe;
+        }
+        details details summary {
+            color: #5b8cdf;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Описание языка программирования (спецификация)</h1>
+
+<div class="toc">
+    <h2>Оглавление</h2>
+    <ul>
+        <li><a href="#basics">Базовые концепции</a>
+            <ul>
+                <li><a href="#expr-control">Выражения и Управляющие конструкции</a></li>
+                <li><a href="#rvalue-wvalue">rvalue и wvalue</a></li>
+                <li><a href="#types">Типы</a></li>
+                <li><a href="#array-literal">Конструкция создания массива на месте</a></li>
+                <li><a href="#comments">Комментарии</a></li>
+                <li><a href="#strings">Строки</a></li>
+            </ul>
+        </li>
+        <li><a href="#expressions">Выражения</a>
+            <ul>
+                <li><a href="#constness">Константность</a></li>
+                <li><a href="#operands">Операнды</a>
+                    <ul>
+                        <li><a href="#var-read-write">Чтение|Запись переменной</a></li>
+                        <li><a href="#var-decl">Объявление переменной</a></li>
+                        <li><a href="#literal">Литерал</a></li>
+                    </ul>
+                </li>
+                <li><a href="#operators">Операторы</a>
+                    <ul>
+                        <li><a href="#prefix">Префиксные</a></li>
+                        <li><a href="#binary">Бинарные</a></li>
+                        <li><a href="#postfix">Постфиксные</a></li>
+                        <li><a href="#function-call">Вызов функции</a></li>
+                        <li><a href="#sizeof">sizeof</a></li>
+                        <li><a href="#lenof">lenof</a></li>
+                        <li><a href="#type-cast">Преобразование типа</a></li>
+                        <li><a href="#address-of">Взятие адреса</a></li>
+                        <li><a href="#dereference">Разыменование</a></li>
+                        <li><a href="#indexing">Индексация</a></li>
+                        <li><a href="#slicing">Взятие среза</a></li>
+                        <li><a href="#assignment">Присваивание</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li><a href="#control-flow">Список управляющих конструкций</a>
+            <ul>
+                <li><a href="#blocks">Блок кода</a></li>
+                <li><a href="#function-def">Объявление функции</a></li>
+                <li><a href="#return">Return</a></li>
+                <li><a href="#multi-assign">Массовое присваивание</a></li>
+                <li><a href="#if-elif-else">Условная конструкция</a>
+                    <ul>
+                        <li><a href="#if">if</a></li>
+                        <li><a href="#elif">elif</a></li>
+                        <li><a href="#else">else</a></li>
+                    </ul>
+                </li>
+                <li><a href="#while">Цикл while</a></li>
+                <li><a href="#loop-control">Конструкции управления циклом</a>
+                    <ul>
+                        <li><a href="#break">break</a></li>
+                        <li><a href="#continue">continue</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li><a href="#precedence">Приоритеты операций</a></li>
+        <li><a href="#implicit-conversion">Неявное преобразования типов</a></li>
+        <li><a href="#scope">Область видимости</a></li>
+        <li><a href="#global-outer">Глобальные и внешние переменные</a></li>
+        <li><a href="#alias">Псевдонимы типов</a></li>
+        <li><a href="#special-notes">Особые пометки</a></li>
+        <li><a href="#builtins">Встроенные функции</a></li>
+    </ul>
+</div>
+
+<hr>
+
+<!-- ======================================================== -->
+<!-- БАЗОВЫЕ КОНЦЕПЦИИ -->
+<details id="basics" open>
+    <summary>Базовые концепции</summary>
+
+    <details id="expr-control">
+        <summary>Выражения и Управляющие конструкции</summary>
+        <p>Язык в общем состоит из двух вещей:</p>
+        <ul>
+            <li><strong>Выражений</strong> (и операторов, из которых они сделаны) — именно они и выполняют работу. Каждое выражение можно представить как дерево из операторов на ветвях и операндов как листьев.<br>
+                <code>var x int8 = 3; 3 + 1; f(x,y);</code>
+            </li>
+            <li><strong>Управляющих конструкций</strong> — они заключают в себе выражения и другие управляющие конструкции, они — "скелет" программы, и их стоит представить как линейный список с вложенностью из подобных списков.<br>
+                Примеры: циклы, условия, функции, обычные выражения, и т.д.
+            </li>
+        </ul>
+    </details>
+
+    <details id="rvalue-wvalue">
+        <summary>rvalue и wvalue</summary>
+        <ul>
+            <li><strong>rvalue</strong> (read value) — что-то, значение чего можно получить. Будь то результат действия оператора, чтение из переменной или литерал.</li>
+            <li><strong>wvalue</strong> (write value) — что-то, куда можно записывать: переменная, её объявление, или какой-то участок памяти.</li>
+        </ul>
+    </details>
+
+    <details id="types">
+        <summary>Типы</summary>
+        <code>&lt;простой тип&gt; &lt;модификаторы&gt;</code>
+        <p>Язык строго типизирован.</p>
+        <p>Тип состоит из двух частей - простого типа и его модификаторов</p>
+
+        <details id="types simple">
+            <summary>Простой тип</summary>
+            <p>Сердце типа и его основная часть, есть несколько их видов</p>
+
+            <details id="types simple base">
+                <code>&lt;название базового типа&gt;</code>
+                <summary>Базовый</summary>
+                <p>Встроенный, базовые типы отвечающие как работать с чем-то и чем оно является, их есть указанное количество.</p>
+                <p><code>bool</code>, <code>int64</code>, <code>int32</code>, <code>int16</code>, <code>int8</code>, <code>uint64</code>, <code>uint32</code>, <code>uint16</code>, <code>uint8</code>, <code>float64</code>, <code>float32</code>.</p>
+                <p><code>bool</code> - булев тип для логических операций и конструкций, использующих условия</p>
+                <p><code>int64</code>, <code>int32</code>, <code>int16</code>, <code>int8</code> - знаковые целые числа</p>
+                <p><code>uint64</code>, <code>uint32</code>, <code>uint16</code>, <code>uint8</code> - беззнаковые целые числа</p>
+                <p><code>float64</code>, <code>float32</code> - числа с плавающей точкой</p>
+
+
+            </details>
+
+            <details id="types simple func">
+                <summary>Функция</summary>
+                <code>func(&lt;типы-аргументы&gt;) -> (&lt;типы-результаты&gt;)</code>
+
+                <p>Представляет тип-указатель на функцию с данными аргументами и результатами.</p>
+                <p>Тип этот можно только вызывать и присваивать, писать в него, копировать и т.д. - нельзя, так как функция это нечто особое.</p>
+                <p><code>&lt;типы-аргументы&gt;</code> и <code>&lt;типы-результаты&gt;</code> - это полноценные типы.</p>
+
+                <p><strong>Примеры:</strong></p>
+                <pre>
+func(float64)->(float64)
+func(int8[])->(uint64)
+func(float64, float64, bool) -> (uint64, int8)
+func(int8[3], int64) -> (int8[3])
+                </pre>
+            </details>
+
+            <details id="types simple alias">
+                <summary>Псевдоним</summary>
+                <code>&lt;псевдоним типа&gt;</code>
+
+                <p>Имя <a href="#alias">псевдонима типа</a></p>
+                <p>Модификаторы, полученные от типа в псевдониме будут склеены с добавленными модификаторами так, как это ожидается</p>
+                <p>Псевдонимы не играют роль в ходе проверок, используется "абсолютное" значения типа, эти штуки для удобства</p>
+
+            </details>
+
+            <details>
+                <summary>Экземпляр класса</summary>
+                <code>&lt;имя класса&gt;</code>
+
+                <p>Если использовать имя класса как простой тип, это будет тип экзепляра класса.
+                    Это просто структура из полей, указанных в определении класса, ведущею себя как объект.</p>
+
+                <p>Тип экзепляра класса нельзя привести никчему, (кроме <code>bool</code>, если определён
+                    <code>__bool__</code>, и это может произойти неявно).</p>
+            </details>
+
+        </details>
+
+        <details id="types modifiers">
+            <summary>Модификаторы</summary>
+
+            <p>Как-то модифицирую тип, создавая вещи на его основе.</p>
+            <p>В полноценном типе идут друг за другом</p>
+
+            <details id="types modifiers pointer">
+                <summary>Указатель</summary>
+                <code>&lt;тип&gt;*</code>
+
+                <p>Это число — адрес чего-то. Может указывать на что угодно. Можно разыменовывать</p>
+                <p>Прибавление/отнятие от такого сдвинет адрес не на n, а на n × размер типа, на который он указывает. Можно складывать/вычитать с целыми числами.</p>
+
+            </details>
+
+            <details id="types modifiers array">
+                <summary>Массив</summary>
+                <code>&lt;тип&gt;[&lt;размер&gt;]</code>
+
+                <p>Статический массив. Размер — часть типа, известная до компиляции. Можно индексировать и среза</p>
+                <p>&lt;размер&gt; - положительное целое число большее 0</p>
+
+            </details>
+
+            <details id="types modifiers slice">
+                <summary>Срез</summary>
+                <code>&lt;тип&gt;[&lt;запятые&gt;]</code>
+
+                <p>Это указатель, но хранящий ещё и количество измерений. Размер динамический. Его можно индексировать и срезать, это динамический массив.</p>
+                <p>&lt;запятые&gt; - их количество отвечает за количество измерений массива, 0 запятых - 1 измерение, 1 запятая - 2 измерения.</p>
+
+            </details>
+
+        </details>
+
+        <p>
+            Также, если тип находиться в классе(вроде, это вложенный класс или псевдоним), то к ним можно обращаться через точку.
+            То есть <code>Class.InnerClass</code> - будет типом вложенного в <code>Class</code> класса <code>InnerClass</code>.
+        </p>
+
+        <p>
+            Парсер типа работает "жадно" и захватит в тип все подходящие конструкции, что есть
+            <code>var arr bool[2]</code> - будет массивом из двух bool, а не просто индексация создания переменной
+        </p>
+
+        <p><strong>Примеры:</strong></p>
+        <ul>
+            <li><code>int*</code> - указатель на int</li>
+            <li><code>int[7]*</code> - указатель на массив из 7 int</li>
+            <li><code>float*[]</code> - срез массива указателей на float</li>
+            <li><code>float[3][3]</code> - 2D массив float 3 на 3</li>
+            <li><code>func (float64) -> (float64)</code> - функция, принимающая и возвращающая float64</li>
+        </ul>
+    </details>
+
+    <details id="array-literal">
+        <summary>Конструкция создания массива на месте</summary>
+        <code>[&lt;rvalue&gt;, &lt;rvalue&gt;, ...]</code>
+        <p>Размер определяется по количеству элементов, тип — по самому общему типу элементов (с <a href="#implicit-conversion">неявным приведением</a>).</p>
+        <p>Также, если элементы массива - это тоже массива, то он попытается привести их элементы к общему типу, таким образом позволяя привести float64[3] и int64[3] к одному типу. </p>
+        <p><strong>Примеры:</strong></p>
+        <pre>
+[1,2,3]          → int64[3]
+[1.0,1,2,3,4]    → float64[5]
+[true, 1 as bool] → bool[2]
+        </pre>
+    </details>
+
+    <details id="comments">
+        <summary>Комментарии</summary>
+        <p>Начинаются с <code>#</code> и действуют до конца строки. Компилятор игнорирует всё после <code>#</code>.</p>
+    </details>
+
+    <details id="strings">
+        <summary>Строки</summary>
+        <code>"&lt;текст&gt;"</code>
+        <p>Строки — это не отдельный тип, а текст в двойных кавычках: <code>"text"</code>, имеет тип <code>uint8[]</code>. Cтрока-литерал(созданная в процессе компиляции) хранится в статической памяти. .</p>
+        <p>Поддерживаются escape-последовательности: <code>\n</code>, <code>\t</code>, <code>\"</code>, <code>\\</code>.</p>
+        <p>И также особая - <code>\&lt;число&gt;</code>, число - это номер символа, ну или значение байта. </p>
+        <pre>
+"Hello, World!"
+"Writing compilers is interesting thing.\n Also, 1+1=-1"
+"print('python')"
+        </pre>
+    </details>
+</details>
+
+<!-- ======================================================== -->
+<!-- ВЫРАЖЕНИЯ -->
+<details id="expressions">
+    <summary>Выражения</summary>
+    <p>Выражения состоят из операторов (корень и ветви) и операндов (листья).</p>
+
+    <details id="constness">
+        <summary>Константность</summary>
+        <p>Значение известно на этапе компиляции. Изначально константны только литералы, но она может сохраняться при операциях <code>+ - * /</code> с ними.</p>
+    </details>
+
+    <details id="operands">
+        <summary>Операнды</summary>
+        <p>Делятся на <code>rvalue</code> и <code>wvalue</code>.</p>
+
+        <details id="var-read-write">
+            <summary>Чтение|Запись переменной</summary>
+            <p><code>&lt;имя переменной&gt;</code></p>
+            <p>Имя — одно слово из латинских букв, <code>_</code> и цифр, не начинается с цифры. Примеры: <code>x</code>, <code>_y</code>, <code>bob</code>, <code>third</code>, <code>dx</code>, <code>_0</code>, <code>_1</code>, <code>_1_2_3</code>.</p>
+        </details>
+
+        <details id="var-decl">
+            <summary>Объявление переменной</summary>
+            <p><code>var &lt;имя&gt; &lt;тип&gt;</code></p>
+            <p>Создаёт новую переменную, работает как запись в существующую.</p>
+        </details>
+
+        <details id="literal">
+            <summary>Литерал</summary>
+            <ul>
+                <li><strong>Целое число</strong>: <code>1</code>, <code>43</code> (тип <code>int64</code>). Также двоичные (<code>0b11</code>) и шестнадцатеричные (<code>0xff</code>).</li>
+                <li><strong>Число с плавающей точкой</strong>: <code>1.0</code>, <code>3.14</code>, <code>1e-9</code> (тип <code>float64</code>).</li>
+                <li><strong>Булево</strong>: <code>true</code>, <code>false</code> (тип <code>bool</code>).</li>
+                <li><strong>Символ</strong>: в одинарных кавычках (<code>'a'</code>, <code>'\n'</code>) — тип <code>int8</code>.</li>
+                <li><strong>Строка</strong>: текст в двойных кавычках - тип <code>int8[]</code> хранятся в read-only памяти(
+                    хранятся только те, что создаются с помощью в процессе компиляции "", собственные строки можете храни где угодно): "text", "i'm programmer\n and mathematic" </li>
+            </ul>
+        </details>
+    </details>
+
+    <details id="operators">
+        <summary>Операторы</summary>
+        <p>Результат почти всех операторов — <code>rvalue</code>. Есть префиксные, бинарные, постфиксные и особые.</p>
+
+        <details id="prefix">
+            <summary>Префиксные</summary>
+            <p><code>&lt;символ&gt; &lt;rvalue&gt;</code></p>
+            <p>Примеры: <code>not true</code>, <code>~1</code>, <code>-3</code>.</p>
+        </details>
+
+        <details id="binary">
+            <summary>Бинарные</summary>
+            <p><code>&lt;rvalue&gt; &lt;символ&gt; &lt;rvalue&gt;</code></p>
+            <p>Примеры: <code>1 + 2</code>, <code>true and false</code>, <code>3 - 2</code>, <code>6 * 6</code>.</p>
+        </details>
+
+        <details id="postfix">
+            <summary>Постфиксные</summary>
+            <p><code>&lt;rvalue&gt; &lt;символ&gt;;</code></p>
+            <p>Примеры: <code>(i is int8)&</code>, <code>(ptr is bool*)*</code>.</p>
+        </details>
+
+        <details id="function-call">
+            <summary>Вызов функции</summary>
+            <p><code>&lt;функция&gt; (&lt;арг1&gt;, &lt;арг2&gt;, ...)</code></p>
+            <p>Функция — указатель на функцию. Количество аргументов соответствует параметрам.</p>
+            <pre>
+cos(3.1415);
+max(1,2);
+f();
+(funcs_arr[1])(1,2,3)
+            </pre>
+        </details>
+
+        <details id="sizeof">
+            <summary>sizeof</summary>
+            <p><code>sizeof &lt;тип&gt;</code> — возвращает размер типа в байтах (тип <code>int64</code>).</p>
+            <pre>sizeof int64; sizeof (int8*); sizeof (float64[10]);</pre>
+        </details>
+
+        <details id="lenof">
+            <summary>lenof</summary>
+            <p><code>lenof &lt;массив|срез&gt;</code> — возвращает длину (верхней размерности) как <code>int64</code>.</p>
+            <pre>lenof (arr is int64[3]); lenof (arr is float32[]);</pre>
+        </details>
+
+        <details id="type-cast">
+            <summary>Преобразование типа</summary>
+            <p><code>&lt;rvalue&gt; as &lt;тип&gt;</code></p>
+            <ul>
+                <li>Числовые типы (<code>int__</code>, <code>float__</code>, <code>bool</code>) можно преобразовывать друг в друга.</li>
+                <li>Срезы нельзя преобразовывать.</li>
+                <li>Указатели можно преобразовывать явно.</li>
+                <li>Массивы — только явно и только меняя тип элементов, размер должен совпадать.</li>
+            </ul>
+        </details>
+
+        <details id="address-of">
+            <summary>Взятие адреса</summary>
+            <p><code>&lt;wvalue&gt;&amp;</code> — берёт адрес объекта.</p>
+            <pre>obj&; (arr is int[10])[2]&;</pre>
+        </details>
+
+        <details id="dereference">
+            <summary>Разыменование</summary>
+            <p><code>&lt;указатель&gt;*</code> — переходит по адресу. Является <code>rvalue</code> и <code>wvalue</code>.</p>
+            <pre>(ptr is bool*)*; (ptr is bool***)***;</pre>
+        </details>
+
+        <details id="indexing">
+            <summary>Индексация</summary>
+            <p><code>&lt;массив|срез&gt; [&lt;индекс1&gt;, &lt;индекс2&gt;, ...]</code></p>
+            <p>Проверка границ неявно. Индексация <em>сохраняет</em> <code>wvalue</code>-ность операнда, если он был <code>wvalue</code>.</p>
+            <pre>(arr is int[10])[0]; (slise is int[])[1000]; (slise_2d is int[,,])[0,100,2];</pre>
+        </details>
+
+        <details id="slicing">
+            <summary>Взятие среза</summary>
+            <p><code>&lt;указатель|массив|срез&gt; [&lt;индексы начала&gt; : &lt;размерности среза&gt;]</code></p>
+            <ul>
+                <li><em>Индексы начала</em> — от какого элемента начинать (если пусто — с первого).</li>
+                <li><em>Размерности среза</em> — размерности результата (если пусто — копируется размерность исходного массива/среза, для указателя ошибка).</li>
+                <li>Размер среза в элементах = произведение размерностей.</li>
+            </ul>
+            <pre>
+(slise is int32[200])[0:20,10]
+(slise is int32[200])[:20,10]
+(slise is bool[10][20][30])[15,0,0:3000]
+            </pre>
+        </details>
+
+        <details id="assignment">
+            <summary>Присваивание</summary>
+            <p><code>&lt;wvalue&gt; = &lt;rvalue&gt;</code></p>
+            <p>Записывает <code>rvalue</code> в <code>wvalue</code>, при необходимости преобразует (неявное приведение). Возвращает <code>rvalue</code>, позволяя цепочки.</p>
+            <pre>i = 2; x = y = 2;</pre>
+        </details>
+
+        <details>
+            <summary>Оператор доступа к полю</summary>
+            <p><code>&lt;rvalue&gt;.&lt;имя&gt;</code> или <code>&lt;rvalue&gt;-&gt;&lt;имя&gt;</code> для указателя</p>
+
+            <p>Обращается к полю чего-то(класса или экземпляра) по известному до компиляции идентификатору.
+            Является <code>rvalue</code> и <code>wvalue</code>.</p>
+
+            <pre>
+MyClass.class_field = 10;
+obj.obj_field = 10;
+some_var = (obj&)->obj_field;
+            </pre>
+        </details>
+
+        <details>
+            <summary>Деструктор</summary>
+            <code>del &lt;экзепляр класса&gt;</code>
+            <p>Ничего не возвращает, следовательно, может быть только вершиной выражения(как функции, возвращающие 0 результатов).</p>
+
+            <p>Нужен для вызова деструктора <code>__del__</code> для экземпляров классов, если они
+                имеют какие-то внешние зависимости, которые должны быть устранены при их удалении.</p>
+
+            <p>Также, можно передать не только число объект, но и: указатель на него <code>Class*</code>,
+                Массив из него любых размерностей <code>Class[1][2][3]...</code>, и срез любых размерностей
+                <code>Class[,,,...]</code>. В этом случае он пройдёт по каждому элементу указанных штук.</p>
+
+            <p>Важно, либо указатель, либо массив, либо срез, более сложные формы обработаны не будет(делайте сами)
+                И также, возможно я передумаю, и позволю сюда сувать любую штуку, пока её основа - <code>Class</code>, но это потом</p>
+
+            <p>Также, автоматически вызывается для локальных(автоматических) переменных(только если это элемент или
+                массив, если он был создан в блоке, аргументы функций не считаются),
+                при выходе из блоков кода, где они были определены, и для глобальных переменных(также, если элемент или
+                массив) в порядке, обратному порядку их инициализации. Также, удаление не произойдёт, если он не был
+                инициализирован, был удалён ранее или был возвращён в <code>return</code></p>
+
+            <p>Также и для временных и не сохранённых объектов(если он был создан(функцией, явно или не явно) в
+                выражении, но не был записан куда-то(чтобы его родителей был записью или он находился в <code>return</code>)</p>
+
+            <pre>
+del obj; - тоже самое что и obj.__del__();
+{
+    var obj_loc Class = Class();
+    var i MyInt = MyInt(1) + MyInt(2); # результат(MyInt(1) + MyInt(2)) будет сохранён, и де инициализирован при выходе из блока,
+                # а временные MyInt(1) и MyInt(2) будут де инициализированы сразу.
+
+} # для obj_loc будет вызван __del__ при выходе из блока, где она объявлена.
+            </pre>
+
+        </details>
+
+    </details>
+</details>
+<!-- ======================================================== -->
+<!-- УПРАВЛЯЮЩИЕ КОНСТРУКЦИИ -->
+<details id="control-flow">
+    <summary>Список управляющих конструкций</summary>
+    <p>Пометка: условия в управляющих конструкциях относятся только к корню дерева-выражения.</p>
+
+    <details id="blocks">
+        <summary>Блок кода</summary>
+        <p><code>{ ... }</code></p>
+        <p>Содержит управляющие конструкции. Может содержать все виды конструкций, включая другие блоки.</p>
+        <pre>
+{
+    1+1; # выражение
+    if 1 > 0 { # условие
+        return 0;
+    }
+    2+2; # выражение
+    var x bool = true; # выражение
+    while x { # цикл
+        x = f(x);
+    }
+    { # блок кода
+        x = x;
+    }
+}
+        </pre>
+    </details>
+
+    <details id="function-def">
+        <summary>Объявление функции</summary>
+        <p><code>def &lt;имя&gt; (&lt;параметры&gt;) { ... }</code><br>
+        <code>def &lt;имя&gt; (&lt;параметры&gt;) -> (&lt;типы результатов&gt;) { ... }</code></p>
+        <ul>
+            <li>Параметры — как объявление переменной без <code>var</code>.</li>
+            <li>Результаты — типы возвращаемых значений.</li>
+            <li>Создаётся переменная с именем функции, содержащая указатель на функцию.</li>
+            <li>Внутренние функции (вложенные) нельзя выносить из области видимости (замыканий нет).</li>
+            <li>Могут быть переопределены во вложенных блоках, как переменный и псевдонимы.</li>
+        </ul>
+        <pre>
+def main() {}
+def blob(i1 int8, i2 int8, ip (int8*) ) { ... }
+def cos(x float64) -> (int64) { ... }
+def blob() -> (bool, float32[]) { ... }
+        </pre>
+    </details>
+
+    <details id="return">
+        <summary>Return</summary>
+        <p><code>return &lt;результаты&gt;;</code><br>
+        <p>Возвращает значения из функции и прерывает её работу. Типы должны соответствовать (или быть приводимыми).</p>
+        <pre>
+return;
+return var1 + var2;
+return 1, 2, 1.3;
+        </pre>
+    </details>
+
+    <details id="multi-assign">
+        <summary>Массовое присваивание</summary>
+        <p><code>&lt;wvalue&gt;, &lt;wvalue&gt;, ... = &lt;rvalue&gt;, &lt;rvalue&gt;, ...;</code></p>
+        <ul>
+            <li>Левая часть — <code>wvalue</code>, правая — <code>rvalue</code>.</li>
+            <li>Каждое выражение имеет <em>мощность</em>: для обычных — 1, для вызова функции — количество возвращаемых значений.</li>
+            <li>Сумма мощностей правой части должна равняться количеству элементов слева.</li>
+            <li>Распределение происходит слева направо.</li>
+            <li>Сначала, слева на право, считаются все <code>rvalue</code>. Потом, слева на право, присваиваются всем <code>wvalue</code>.</li>
+        </ul>
+        <pre>
+var1, var2 = 1, 2;
+var1, var2 = f(x);      # f возвращает 2 значения
+var1, var2, var3 = 1, f(x);  # var1=1, var2 и var3 = результаты f
+        </pre>
+    </details>
+
+    <details id="if-elif-else">
+        <summary>Условная конструкция</summary>
+
+        <details id="if">
+            <summary>if</summary>
+            <p><code>if &lt;условие&gt; { ... }</code></p>
+            <p>Выполняется, если условие истинно.</p>
+        </details>
+
+        <details id="elif">
+            <summary>elif</summary>
+            <p><code>elif &lt;условие&gt; { ... }</code></p>
+            <p>Необязательный блок дополнительной проверки. Может быть несколько.</p>
+        </details>
+
+        <details id="else">
+            <summary>else</summary>
+            <p><code>else { ... }</code></p>
+            <p>Выполняется, если ни одно из условий не сработало. Замыкающий.</p>
+        </details>
+
+        <p><strong>Пример:</strong></p>
+        <pre>
+if &lt;условие 1&gt; { ... }
+elif &lt;условие 2&gt; { ... }
+elif &lt;условие 3&gt; { ... }
+else { ... }
+        </pre>
+    </details>
+
+    <details id="while">
+        <summary>Цикл while</summary>
+        <p><code>while &lt;условие продолжения&gt; { ... }</code></p>
+        <p>Пока условие истинно, выполняется блок. Завершается при ложном условии или <code>break</code>.</p>
+        <pre>
+while true { ... }
+while 10 &lt; x &lt; 100 { ... }
+        </pre>
+    </details>
+
+    <details id="loop-control">
+        <summary>Конструкции управления циклом</summary>
+        <p>Действуют на один ближайший по вложенности цикл.</p>
+
+        <details id="break">
+            <summary>break</summary>
+            <p><code>break;</code> — останавливает выполнение цикла и выходит из него.</p>
+        </details>
+
+        <details id="continue">
+            <summary>continue</summary>
+            <p><code>continue;</code> — останавливает выполнение блока и переходит к проверке условия цикла.</p>
+        </details>
+    </details>
+</details>
+
+<!-- ======================================================== -->
+<!-- ПРОЧЕЕ -->
+<details id="precedence">
+    <summary>Приоритеты операций</summary>
+    <p>От высшего к низшему. Ассоциативность: левая (<code>&lt;</code>), правая (<code>&gt;</code>), нет (<code>-</code>).</p>
+    <ul>
+        <li>  <code>-</code>  <code>( ... )</code> – группировка</li>
+        <li>  <code>-</code>  <code>f(...), var &lt;имя&gt; &lt;тип&gt;</code> – вызов функции, объявление переменной</li>
+        <li>  <code>&lt;</code>  <code>&lt;классс или экземпляр&gt; . -> &lt;имя&gt;  </code> - доступ к полю, одинаков с вызовом функции</li>
+        <li>  <code>-</code>  <code>del &lt;экземпляр&gt;</code> - де инициализация экземпляра</li>
+        <li>  <code>-</code>  <code>sizeof &lt;тип&gt;</code></li>
+        <li><code>&lt;</code> <code>&lt;rvalue&gt; as &lt;тип&gt;</code> – приведение</li>
+        <li>  <code>-</code>  <code>lenof &lt;rvalue&gt;</code></li>
+        <li><code>&lt;</code> <code>* &amp; [индекс] [срез]</code> – операции с указателями, массивами, срезами</li>
+        <li><code>&gt;</code> <code>- &lt;rvalue&gt;</code> – унарный минус</li>
+        <li><code>&lt;</code> <code>* / %</code> – мультипликативные</li>
+        <li><code>&lt;</code> <code>+ -</code> – аддитивные</li>
+        <li><code>&lt;</code> <code>&lt;&lt; &gt;&gt;</code> – сдвиги</li>
+        <li><code>&gt;</code> <code>~ &lt;rvalue&gt;</code> – побитовое NOT</li>
+        <li><code>&lt;</code> <code>&amp;</code> – побитовое AND</li>
+        <li><code>&lt;</code> <code>^</code> – побитовое XOR</li>
+        <li><code>&lt;</code> <code>|</code> – побитовое OR</li>
+        <li><code>&lt;</code> <code>== != &lt; &lt;= &gt; &gt;=</code> – сравнения</li>
+        <li><code>&gt;</code> <code>not &lt;rvalue&gt;</code> – логическое NOT</li>
+        <li><code>&lt;</code> <code>and</code> – логическое AND</li>
+        <li><code>&lt;</code> <code>or</code> – логическое OR</li>
+        <li><code>&lt;</code> <code>=</code> – присваивание (возвращает <code>rvalue</code>)</li>
+    </ul>
+    <p><strong>Цепочки сравнений</strong> вида <code>a &lt;= b == c &lt; d</code> разворачиваются в <code>a &lt;= b and b == c and c &lt; d</code>.</p>
+</details>
+
+<details id="implicit-conversion">
+    <summary>Неявное преобразования типов</summary>
+    <p>Преобразуются от менее общих к более общим:</p>
+    <ul>
+        <li><code>bool → int8 → int16 → int32 → int64</code></li>
+        <li>Беззнаковые: <code>uint8 → uint16 → uint32 → uint64</code> или переход в знаковые: <code>uint8 → int16</code>, <code>uint16 → int32</code>, <code>uint32 → int64</code> (кроме <code>uint64</code>, который переводит все <code>int__</code> в <code>uint64</code>).</li>
+        <li>С плавающей точкой: <code>float32 → float64</code>, все целые становятся флоатами.</li>
+        <li>Все эти типы также приводятся к <code>bool</code>, <code>true</code> если не равны 0.</li>
+        <li>Экземпляр класса приводиться к <code>bool</code>, если для класса определён <code>__bool__</code>.</li>
+        <li>Неявное приведение массивов, указателей, функций не производится.</li>
+    </ul>
+</details>
+
+<details id="scope">
+    <summary>Область видимости</summary>
+    <ul>
+        <li>Область видимости - это пространство имён переменный, функций, псевдонимом, и также вложенных областей.</li>
+        <li>Изначально есть глобальная область.</li>
+        <li>Функции, циклы, условия, блоки <code>{ ... }</code> создают вложенные области.</li>
+        <li>Вложенная область имеет доступ к переменным(функциям, псевдонимам) из внешних областей.</li>
+        <li><strong>Нельзя</strong> выносить ссылку на функцию из области, где она создана (сохранения контекста не поддерживаются).</li>
+        <li>Переопределять переменную(функцию, псевдоним) в одной области дважды нельзя. Но можно переопределять во вложенных.</li>
+    </ul>
+</details>
+
+<details id="global-outer">
+    <summary>Глобальные и внешние переменные</summary>
+        <details id="global-outer-outer">
+            <summary>Внешние</summary>
+            <p><em>Внешние переменные</em> - определённые во внешних областях видимости функций (не в текущей и не глобальной). Пример:</p>
+            <pre>
+def main() {
+    var i int32;
+    def foo() {
+        i = 10;   # внешняя переменная (из main)
+    }
+    if 1 {
+        i = 3;    # не внешняя (мы всё ещё в main)
+    }
+}
+            </pre>
+            <p>Все имена можно переопределять, функции, переменные, псевдонимы. И получать новые вещи на этих именах, также, такое переопределение "затмевает" внешнее имя, и доступ к нему теряется.</p>
+            <p>Выносить адреса вложенных переменных нельзя, так же как и как либо из внешних областей видимости получить доступ к вещём из областей вложенных.</p>
+        </details>
+
+        <details id="global-outer-global">
+            <summary>Глобальные</summary>
+            <p><em>Глобальные переменные</em> - определённые в глобальной области видимости.</p>
+            <pre>
+var glob_int int64; # глобальная переменная
+
+def main() {
+    var i int32 = 3; # не глобальная
+    var s (float64[]); # не глобальная
+}
+
+var glob_bool bool; # глобальная
+            </pre>
+            <p>Ввиду того, что это переменные определены в глобальной, самой высшей области видимости, они видны во всей программе.</p>
+            <p>Переменные могут быть инициализированы с любым значением, они вычисляются один раз при входе в программу сверху вниз.</p>
+        </details>
+</details>
+
+<details id="special-notes">
+    <summary>Особые пометки</summary>
+    <ul>
+        <li><strong>О массовых сравнениях:</strong> цепочки вида <code>a &lt;= b == c &lt; d</code> разворачиваются в <code>a &lt;= b and b == c and c &lt; d</code>.</li>
+        <li><strong>О приоритетах при создании сложных типов:</strong> модификаторы <code>*[]</code> имеют более низкий приоритет, чем операторы, поэтому для явного указания типа нужно заключать в скобки: <code>var a (int*)</code>.</li>
+        <li>Для запуска программы нужна точка входа - функция <code>main</code>, она может быть только одна на весь проект.</li>
+        <li>Язык компилируется в C.</li>
+    </ul>
+</details>
+
+<details id="alias">
+    <summary>Псевдонимы типов</summary>
+    <code>alias &lt;псевдоним&gt; &lt;тип&gt;;</code>
+    <ul>
+        <li>Псевдоним — одно слово, не может перекрывать имена переменных/функций/классов и т.д.</li>
+        <li>Может быть переопределён во вложенных областях.</li>
+        <li>Действует как псевдоним, не более.</li>
+    </ul>
+</details>
+
+<details>
+    <summary>Перечисления</summary>
+    <code>enum &lt;имя&gt; {&lt;поля&gt;}</code>
+
+    <p>
+        Перечисление. Это перечисление состояний чего-то. И служит оно идентификатором такого состояния.
+    </p>
+
+    <p><code>&lt;имя&gt;</code> Такие-же правила как и везде, уникальное в данной области видимости, может затмевать и быть затмеваемым</p>
+
+    <p><code>&lt;поля&gt;</code> - это перечисление всех состояний вида <code>&lt;имя состояния&gt;;</code></p>
+
+    <p>Имя перечисление может служить типом(тогда это будет переменная для одного из состояний) и
+        переменной, из которой можно будет получить нужное состояние.</p>
+
+    <p>Такие состояния можно только записывать в переменные соответствующего типа, и сравнивать их между собой.
+        Ничего более.</p>
+
+    <p>Внутреннее устройство самого типа-перечисления, его объектов, что есть что - это дело компилятора, и вам не
+        нужно о нём думать. Вам нужно их только сохранять и сравнивать.</p>
+
+    <pre>
+enum Errors {
+    MemoryNotFound;
+    FileNotFound;
+    ZeroDivision;
+    ValueError;
+    AssertionError;
+}
+
+var err_state Errors;
+err_state = Errors.AssertionError;
+err_state == Errors.FileNotFound;
+    </pre>
+</details>
+
+<details id="classes">
+    <summary>Классы</summary>
+    <code>class &lt;имя&gt; { &lt;поля экзепляра&gt; &lt;остальное&gt; }</code>
+    <p>Класс - это поле переменных и методов, созданный работать с экземплярами класса, что имеют только переменные </p>
+    <p>Служат способом объединения данных и методов.</p>
+
+    <p>Как и остальные имена, могут быть переопределены во вложенных областях видимости</p>
+    <p>Экземпляр класса - это объект, такой же как массив или число, но имеющий особую структуру.</p>
+
+    <details>
+        <summary>&lt;имя&gt;</summary>
+        <p>Требования такие же, как и к именам переменных, функций и т.д, могут
+            переопределять что-то внешнее, могут быть переопределены где-то ещё.</p>
+
+        <p>Имя это может использоваться и как тип, и как переменная.</p>
+        <p>В случае использования как переменной, мы обращаемся к полям класса, его переменных и функций.</p>
+        <p>В случае использования как типа - это тип экземпляра класса.</p>
+        <pre>
+class Myclass { # имя класса - Myclass
+    {
+        a int64; # экземпляр содержит 1 поле - int64 с именем a
+    }
+    var b int64 = 10; # сам класс содержит одну переменную - b
+}
+
+def main() {
+    var obj Myclass;  # это переменная для экземпляра класса
+    Myclass.b; # это обращение к полю b класса
+}
+        </pre>
+    </details>
+
+    <details>
+        <summary>&lt;поля экзепляра&gt;</summary>
+        <code>{&lt;имя поля&gt; &lt;тип поля&gt;; &lt;и т.д.&gt;}</code>
+
+        <p>Это перечисление полей и их типов, указывающие, какие поля будут у экземпляров класса.</p>
+        <p>Это - имя поля, его тип, и ";". Такие поля идут друг за другом, заключенные в "{}" сразу в начале блока кода объявления класса.</p>
+        <p>Это поле должно существовать, но может быть пустым. В таком случае экземпляр класса не может быть создан(и удалён).</p>
+
+        <pre>
+class Myclass {
+    { # в начале
+        a int64; # первое поле, имя и тип
+        b (float64[]); # второе поле
+    } # в итоге, экземпляр класса содержит 2 поля, "a" и "b"
+}
+        </pre>
+    </details>
+
+    <p>Далее идёт то, что ещё может располагаться в объявлении класса - &lt;остальное&gt;.</p>
+
+    <details>
+        <summary>Переменные класса</summary>
+
+        <p>Работают подобно глобальным переменным, но лежат и доступны только в классе</p>
+
+        <pre>
+class MyClass{
+    {}
+    var class_var int64; # переменная класса
+}
+
+def main() {
+    MyClass.class_var = 10; # обращение к ней
+}
+        </pre>
+    </details>
+
+    <details>
+        <summary>Методы</summary>
+        <p>Методы - это функции, доступные из класса или его методов. Определяются как обычные функции в теле класса.</p>
+
+        <p>Если метод вызывается от экземпляра класса, то этот экземпляр неявно передаётся
+            как первый аргумент(если заращивался указатель, то будет передан указатель) в
+            случае вызова от класса ничего неявного не происходит.</p>
+
+        <p>Переопределять методы класса нельзя, функции - <code>read-only</code>, впрочем, вы можете "стащить" __init__
+            или любой другой метод себе, и использовать их без вызова от класса или объекта.</p>
+
+        <p>Писать метод без <code>self MyClass</code> можно, тогда правда, этот метод нельзя будет вызвать от
+            экземпляра(т.к. он будет передан неявно, а это ошибка типа и количества аргументов)</p>
+
+        <pre>
+class MyClass{
+    {a int64;}
+
+    def __init__(self MyClass, a int64) { # первый, "магический" метод
+        self.a = a;
+        return self;
+    }
+
+    def method(self MyClass) -> (int64) { # ещё 1 метод, от возвращает поля "a" экземпляра, увеличенное на 1.
+        return self.a + 1;
+    }
+
+    def method_ptr(self (MyClass*)) -> (int64) { # такой-же, но работает с указателем
+        return self->a + 1;
+    }
+}
+
+def main() {
+    var obj MyClass = MyClass(1);
+    MyClass.method(obj); # method вызывается от obj
+    obj.method(); # тоже самое
+
+    obj.method_ptr() # будет передан не объект, а указатель на него
+    MyClass.method_prt(obj&); # тоже самое
+
+    var obj_p (MyClass*) = obj&;
+    obj_p.method_ptr() # тоже сработает, будет передан указатель
+
+    MyClass.method_prt = 0 as (func((MyClass*))->(int64)); # нельзя
+}
+        </pre>
+    </details>
+
+    <details>
+        <summary>Магические методы</summary>
+
+        <p>Это функции с особыми и именами и типами. Определяя их, мы позволяем участвовать классу в особых, встроенных штуках, таких как сложение.</p>
+        <p>Практически все магические методы разворачиваются в получение соответствующего метода из класса, а потом вызов его, то есть obj1 + obj2 станет cls.__add__(obj1, obj2)</p>
+
+        <details>
+            <summary>Инициализаторы</summary>
+
+            <details>
+                <summary>__init__</summary>
+                <code>def __init__(self Class, &lt;прочие аргументы&gt;) -> (Class)</code>
+                <p>
+                    Отвечает за инициализацию экземпляра. Вызывается при вызове класса, то есть <code>Class()</code>.
+                    Может быть не определён, тогда <code>Class()</code> вернёт пустой
+                    экземпляр(будет рядом из нулей). Также <code>Class()</code> -
+                    возвращает именно временный объект(как число, или массив), с которым можно
+                    делать всё тоже что и обычно.
+                </p>
+            </details>
+
+            <details>
+                <summary>__del__</summary>
+                <code>def __del__(self Class) -> ()</code>
+                <p>
+                    Отвечает за де инициализацию экземпляра. Нужен для того, если у объекта есть какая-то внешняя
+                    связь(как аллоцированная память), что должна быть как-то прервана перед тем, как объект
+                    будет считаться готовым к удалению без последствий.
+                </p>
+                <p>
+                    Он может быть вызван явно с помощью оператора <code>del &lt;объект&gt;</code>, и также он
+                    вызывается автоматически для автоматических(обычных, стековых) переменных, и для глобальных
+                    при завершении программы.
+                </p>
+            </details>
+        </details>
+
+        <details>
+            <summary>Преобразования</summary>
+            <p>Преобразовываю объект в другие штуки</p>
+
+            <ul>
+                <li><code>def __bool__(self Class) -> (bool)</code> - будет вызвано при приведении объекта к типу <code>bool</code>, также позволяет это делать.</li>
+            </ul>
+        </details>
+
+        <details>
+            <summary>Математика</summary>
+            <p>Все - <code>def &lt;имя&gt; (self Class, other Class) -> (Class)</code></p>
+
+            <ul>
+                <li><code>__add__</code> срабатывает при операторе + </li>
+                <li><code>__sub__</code> срабатывает при операторе - </li>
+                <li><code>__mul__</code> срабатывает при операторе * </li>
+                <li><code>__div__</code> срабатывает при операторе / </li>
+                <li><code>__mod__</code> срабатывает при операторе % </li>
+            </ul>
+
+            <p>Исключение - <code>def __neg__(self Class) -> (Class)</code> - срабатывает при унарном -</p>
+
+        </details>
+
+        <details>
+            <summary>Сравнения</summary>
+            <p>Все - <code>def &lt;имя&gt; (self Class, other Class) -> (bool)</code></p>
+
+            <ul>
+                <li><code>__eq__</code> - ==</li>
+                <li><code>__ne__</code> - !=</li>
+                <li><code>__lt__</code> - <</li>
+                <li><code>__le__</code> - <=</li>
+                <li><code>__gt__</code> - ></li>
+                <li><code>__ge__</code> - >=</li>
+            </ul>
+        </details>
+
+        <details>
+            <summary><code>__call__</code></summary>
+            <code>def __call__(self Class, &lt;прочие параметры&gt;) -> (&lt;результаты&gt;)</code>
+
+            <p>Позволяет вызывать экземпляр класса.</p>
+            <p>Фактически, просто синтаксический сахар на obj() -> obj.__call__()
+                что подчиняется тем же правилам получения поля и прочего.</p>
+
+            <pre>
+var obj Class = Class();
+obj(1,2,3);
+            </pre>
+        </details>
+
+    </details>
+
+    <p>Пока никаких наследований и ооп не будет, но это только пока.</p>
+
+
+</details>
+
+<details id="modules">
+    <summary>Модульность</summary>
+
+    <p>Позволяют разность код по разным файлам, и ещё немного.</p>
+
+    <details id="modules-import">
+        <summary>Импорт</summary>
+        <code>from &lt;путь к файлу&gt; import &lt;что импортировать&gt;;</code>
+
+        <p>Получение и передачи вещей другим модулям</p>
+
+        <details>
+            <summary>&lt;путь к файлу&gt;</summary>
+            <p>Это путь к файлу(модулю) (относительный) из которого мы хотим импортировать что-то</p>
+
+            <pre>
+from std/io import print_f;
+from ..Utils/Physic/Fields import all;
+from ......./my_dir/my_file_10 import extremely_complicated_functions as ecf;
+from std/math import sin as math_sin, cos, log2 as log;
+            </pre>
+        </details>
+
+        <details>
+            <summary>&lt;что импортировать&gt;</summary>
+
+            <p>Это те имена(или особая команды) того, что мы хотим импортировать.</p>
+
+            <p><code>all</code> - импорт всех публичных имён из файла</p>
+            <pre>
+from ..Utils/Graphic import all; # получение всёх имен из указанного файла
+            </pre>
+
+            <p><code>&lt;имя(имена)&gt;</code> - импорт одного(или множества) указанных имён из модуля</p>
+            <pre>
+from std/math import log; # импорт только "log" из указанного модуля
+from OurMath import sin, cos; # импорт только имён "sin" и "cos"
+            </pre>
+
+            <p><code>&lt;имя&gt; as &lt;псевдоним&gt;</code> - импорт и переименования чего-то(или множества), нужен для избежаний коллизий имён, можно комбинировать с обычным.</p>
+            <pre>
+from std/matrices import m_mul as std_m_mul; # импорт "m_mul" из указанного модуля и переименование его как "std_m_mul"
+from our_matrices import m_mul as our_m_mul, m_print as our_m_print; # также, но множественное
+from std/vectors import v_print as std_v_print, v_dot; # можно комбинировать переименования с обычными.
+            </pre>
+
+        </details>
+
+        <p>Несколько импортов из 1 модуля возможно, но будьте аккуратны с именами.</p>
+        <pre>
+from std/math import sin;
+from std/math import all; # конфликт имён, "sin" уже есть.
+
+from std/io import print_f;
+from std/io import print_s; # всё хорошо, будет импортированы и "print_f" и "print_s"
+        </pre>
+
+        <p>Импорты могут стоять исключительно в начале файла друг за другом</p>
+        <pre>
+from std/math import sin;
+from std/math import cos; # всё хорошо
+        </pre>
+        <pre>
+from std/math import sin;
+var _sin func(float64)->(float64) = sin;
+from std/math import cos; # ошибка, импорт не в начале файла
+        </pre>
+
+        <p>Рекурсивный импорт запрещён.</p>
+        <p>Импортированные имена можно считать полной частью модуля, их можно переопределить, можно экспонировать, использовать и т.д.</p>
+
+    </details>
+
+    <details id="modules-export">
+        <summary>Экспорт</summary>
+        <code>export &lt;что передавать&gt;;</code>
+
+        <p><code>&lt;что передавать&gt;</code> - то, что будет импортирована из модуля при его импортировании, соответствует тому, что есть для импорта.</p>
+        <ul>
+            <li><code>all</code> - все глобальные имена(включая импортированные)</li>
+            <li><code>&lt;имя&gt;</code> - только указанные имена</li>
+            <li><code>&lt;имя&gt; as &lt;псевдоним&gt;</code> - указанные имена, с переименованием</li>
+            <li><code>&lt;имя&gt;</code> и <code>&lt;имя&gt; as &lt;псевдоним&gt;</code> могут комбинироваться и быть множественным в одном <code>export</code>.</li>
+        </ul>
+        <pre>
+export glob_var1;
+export glob_var2, glob_var3;
+export ecf as extremely_complicated_functions; # в модули-импортёры "ecf" попадёт под именем "extremely_complicated_functions"
+        </pre>
+
+        <p>Множественное использование <code>export</code> возможно.</p>
+        <pre>
+export glob_var1;
+export glob_var2, glob_var3; # все хорошо, будет экспортированы все три "glob_var"
+        </pre>
+
+        <p>Так как <code>export</code> начинает иметь значение только после завершения анализа кода модуля, в нём можно использовать имена, не объявленные до его. </p>
+        <pre>
+export last_var; # все хорошо, "last_var" будет экспортирована без ошибок
+var last_var int64;
+        </pre>
+
+    </details>
+
+    <details id="modules-std">
+        <summary>Стандартная библиотека</summary>
+
+        <p>В случае импортирования из пути <code>std/...</code> импорт произойдёт не из указанного пути, а из стандартной библиотеки</p>
+        <p>Что можно импортировать - <a href="#std">стандартная библиотека</a></p>
+    </details>
+
+    <details id="modules-also">
+        <summary>Также</summary>
+
+        <details>
+            <summary>Механизм</summary>
+
+            <p>
+                При запуске компилятора на файле, компилятор смотрит начало файла на предмет импортов.
+                В случае нахождения он проходит к указанным файлам и делает то же самое с ними.
+                Так, пока не построит полную структуры зависимостей программы.
+                После он с листьев начинает полную обработку модулей.
+                После её окончания в модуле, он берёт все экспортируемые имена и добавляет их в модули-импортёры,
+                позволяя коду модуля-импортёра видеть импортированные имена.
+                После, если все импорты модуля получены, он начинает его обработку, так, пока все файлы не будут обработаны.
+            </p>
+
+        </details>
+
+        <details>
+            <summary>Глобальные переменные</summary>
+            <p>Глобальные переменный будет вычисляться согласно древу зависимостей модулей,
+                чтобы гарантировать что всё нужное для их вычисления будет готово. </p>
+            <p>Порядок вычисления среди переменных из независимых модулей не гарантируется
+                (если A импортирует B и C, и B и C ни как независимы, то переменные A будут
+                вычислены позже B и C, но не известно, что будет вычисленно раньше - B или C). </p>
+            <p>Импортированные глобальные переменные - это не копии, все они ведут к одному участку памяти.</p>
+        </details>
+
+        <details>
+            <summary>Компиляция в си</summary>
+
+            <p>Среди прочего, будет создан <code>Makefile</code> что добавит и сделает всё что нужно, позволяя собрать всё одной командой</p>
+        </details>
+    </details>
+
+    <ul>
+        <li>В файле, от которого запускается компилятор, должна быть точка входа(функция <code>main</code>)</li>
+        <li>Повторений точки входа быть не должно, она должна быть одна на весь компилируемый проект.</li>
+    </ul>
+
+</details>
+
+<details id="std">
+    <summary>Стандартная библиотека</summary>
+
+    <p>Список модулей стандартной библиотеки и доступных в них функциях, переменных и прочего. </p>
+
+    <details>
+        <summary>io</summary>
+        <p>io - input output, работы с вывод-выводом данных.</p>
+
+        <p>Весь модули в основном состоит из 1 класса - <code>IOStream</code></p>
+
+        <details>
+            <summary><code>IOStream</code></summary>
+            <p>Класс, являющимся потоком ввода-вывода</p>
+
+            <p><code>__init__</code> экземпляры класса создаются в помощью <code>open</code>, этот метод выкинет ошибку.</p>
+
+            <details>
+                <summary>open</summary>
+                <code>def open(path uint8[], mode uint8[]) -> (IOStream)</code>
+
+                <p>Открывает файл по пути path с режимом mode, возвращая дескриптор</p>
+                <p>Открытие могло провалиться - проверяйте <code>is_err</code></p>
+                <p><code>mode</code> - такой-же, как и в си.</p>
+            </details>
+
+            <p><code>__del__</code> - закрывает файл</p>
+
+            <p>Ошибки</p>
+            <ul>
+                <li><code>def is_eof(stream IOStream*) -> (bool)</code> - достигнул ли конец файла</li>
+                <li><code>def is_err(stream IOStream*) -> (bool)</code> - произошла ли какая-то ошибка</li>
+                <li><code>def good(stream IOStream*) -> (bool)</code> - ошибок нет и конец файла не достигнут</li>
+            </ul>
+
+            <p>Ввод</p>
+            <ul>
+                <li><code>def getc(stream IOStream*) -> (uint8)</code> - берёт 1 символ из потока, 0 в случае провала.</li>
+                <li><code>def getl(stream IOStream*, buf uint8[]) -> (uint64)</code> - читает все символы в buf, останавливаясь на конец buf, конец файла или новую строку, возвращает количество прочитанных символов</li>
+                <li><code>def gets(stream IOStream*, buf uint8[]) -> (uint64)</code> - читает все символы в buf, останавливаясь на конец buf или конец файла, возвращает количество прочитанных символов</li>
+            </ul>
+
+            <p>Вывод</p>
+            <ul>
+                <li><code>def putc(stream IOStream*, ch uint8)</code> - пишет 1 символ</li>
+                <li><code>def puts(stream IOStream*, str uint8[]) -> (uint64)</code> - пишет весь срез, возвращает кол-во успешно записанных символов.</li>
+            </ul>
+
+            <details>
+                <summary>Форматированный ввод вывод</summary>
+
+                <p>пока только вывод</p>
+
+                <ul>
+                    <li><code>print_i(stream IOStream*, format uint8[], i int64)</code> – знаковое число</li>
+                    <li><code>print_u(stream IOStream*, format uint8[], u uint64)</code> – беззнаковое</li>
+                    <li><code>print_f(stream IOStream*, format uint8[], f float64)</code> – число с плавающей точкой</li>
+                    <li><code>print_b(stream IOStream*, format uint8[], b bool)</code> – булево значение</li>
+                    <li><code>print_c(stream IOStream*, format uint8[], c int8)</code> – символ</li>
+                    <li><code>print_s(stream IOStream*, s uint8[])</code> – строка</li>
+                </ul>
+
+                <details>
+                    <summary>Спецификаторы</summary>
+
+                    <p>Используются в форматированных строках для указания того, что и в каком виде должно быть,
+                    начинаются с <code>%</code>, чтобы написать просто % введите <code>%%</code></p>
+
+                    <p><code>int64</code> <code>%i</code> для любого, <code>%&lt;минимальный размер&gt;i</code> для в заданных размерах</p>
+                    <p><code>uint64</code> <code>%u</code> для любого, <code>%&lt;минимальный размер&gt;u</code> для в заданных размерах</p>
+                    <p><code>float64</code> <code>%f</code> для любого, <code>%&lt;минимальный размер&gt;f</code> для в заданных размерах,
+                        и <code>%.&lt;знаков после запятой&gt;f</code> для конкретного количество знаков после запятой, можно
+                        скомбинировать - <code>%&lt;минимальный размер&gt;.&lt;знаков после запятой&gt;f</code></p>
+                    <p>Eсли минимальный размер будет превышен, то число просто выйдет за него.</p>
+                    <p><code>bool</code> <code>%tb</code> для вывода <code>false</code> или <code>true</code> и %b для <code>0</code> или <code>1</code></p>
+                    <p><code>uint8</code> <code>%c</code> в любом случае(1 символ)</p>
+                    <p><code>uint8[]</code> <code>%s</code> в любом случае(весь срез)</p>
+
+                    <p>Используються в соответствующий функциях, в случае неправильного спецификатора программа упадёт.</p>
+
+                </details>
+            </details>
+
+            <p>Перемещение</p>
+            <ul>
+                <li><code>def pos(stream IOStream*) -> (int64)</code> - количество байт от начала файла</li>
+                <li><code>def gotos(stream IOStream*, pos int64)</code> - переходит на pos байт от начала файла</li>
+                <li><code>def jump(stream IOStream*, pos int64)</code> - переходит на pos байт от текущей позиции</li>
+                <li><code>def gotoe(stream IOStream*, pos int64)</code> - переходит на pos байт от конца файла</li>
+            </ul>
+
+            <p>Также</p>
+            <p><code>def flush(stream IOStream*)</code> - сброс буфера</p>
+
+        </details>
+
+        <p>Также есть 3 переменных - стандартный потоков</p>
+        <ul>
+            <li><code>stdin IOStream</code> - стандартный поток ввода</li>
+            <li><code>stdout IOStream</code> - стандартный поток вывода</li>
+            <li><code>stderr IOStream</code> - стандартный поток вывода ошибок</li>
+        </ul>
+
+    </details>
+
+    <details>
+        <summary>mem</summary>
+        <p>mem - memory, работа с динамический памятью, аллокацией, кучами и т.д.</p>
+
+        <ul>
+            <li><code>alloc(size uint64) -> ((int8*))</code> - аллокация памяти(обёртка над <code>malloc</code>)</li>
+            <li><code>free(p (int8*))</code> - освобождение аллоцированной памяти</li>
+            <li><code>realloc(start (int8*), new_size uint64) -> ((int8*))</code> - реаллокация с новым размером</li>
+        </ul>
+
+
+        <p>Переменные</p>
+        <ul>
+            <li><code>NULL</code> - 0 as (int8*) - это вернут alloc и realloc в случае провала аллокации.</li>
+        </ul>
+    </details>
+
+    <details>
+        <summary>time</summary>
+        <p>Инструменты для отсчёта и работы с временем.</p>
+
+        <p>Всё работает и принимает int64 в виде наносекунд(1e-9)</p>
+
+        <ul>
+            <li><code>now()->(int64)</code> - текущее время</li>
+            <li><code>sleep(ns int64)</code> - спать</li>
+        </ul>
+
+        <p>Переменные, нужны для не необходимости писать много нулей</p>
+        <ul>
+            <li><code>NS int64</code> - 1e9</li>
+            <li><code>US int64</code> - 1e6</li>
+            <li><code>MS int64</code> - 1e3</li>
+        </ul>
+
+    </details>
+
+    <details>
+        <summary>math</summary>
+        <p>Математика</p>
+
+        <ul>
+            <li><code>abs(f float64) -> (float64)</code></li>
+            <li><code>absi(i int64) -> (int64)</code></li>
+        </ul>
+
+        <ul>
+            <li><code>sin(f float64) -> (float64)</code></li>
+            <li><code>cos(f float64) -> (float64)</code></li>
+            <li><code>tan(f float64) -> (float64)</code></li>
+            <li><code>asin(f float64) -> (float64)</code></li>
+            <li><code>acos(f float64) -> (float64)</code></li>
+            <li><code>atan(f float64) -> (float64)</code></li>
+            <li><code>atan2(x float64, y float64) -> (float64)</code></li>
+        </ul>
+
+        <ul>
+            <li><code>exp(f float64) -> (float64)</code></li>
+            <li><code>log(f float64) -> (float64)</code> - натуральный</li>
+            <li><code>log2(f float64) -> (float64)</code></li>
+            <li><code>log10(f float64) -> (float64)</code></li>
+        </ul>
+
+        <ul>
+            <li><code>pow(base float64, pow float64) -> (float64)</code></li>
+            <li><code>sqrt(f float64) -> (float64)</code> - квадратный корень</li>
+        </ul>
+
+        <ul>
+            <li><code>floor(f float64) -> (float64)</code></li>
+            <li><code>round(f float64) -> (float64)</code></li>
+            <li><code>ceil(f float64) -> (float64)</code></li>
+            <li><code>clamp(f float64, min float64, max float64) -> (float64)</code></li>
+        </ul>
+
+        <p>Переменные</p>
+        <ul>
+            <li><code>PI float64</code> - pi ~= 3.14</li>
+            <li><code>E float64</code> - e ~= 2.71</li>
+        </ul>
+
+    </details>
+
+    <details>
+        <summary>rand</summary>
+        <p>Генерация случайных(псевдо) чисел</p>
+
+        <ul>
+            <li><code>seed(s uint64)</code> - установка семени</li>
+            <li><code>rand() -> (uint64)</code> - 64 битное беззнаковое</li>
+            <li><code>rand_range(min int64, max int64) -> (int64)</code> - число в пределе</li>
+            <li><code>randf() -> (float64)</code> - в промежутке [0;1]</li>
+            <li><code>randf_range(min float64, max float64) -> (float64)</code> - число с плавающей точкой в пределе</li>
+        </ul>
+    </details>
+
+    <details>
+        <summary>testing</summary>
+        <p>Тестирование, хотя пока есть только 2 функция.</p>
+
+        <ul>
+            <li><code>assert(cond bool, msg (int8[])</code> - если <code>cond</code> ложно,
+                экстренно завершает программу и выводит <code>msg</code></li>
+            <li><code>abort()</code> - экстренно прерывает программу.</li>
+        </ul>
+    </details>
+
+    <p>всё ниже будет когда-то.... когда понадобиться</p>
+
+    <details>
+        <summary>string</summary>
+        <p>Работа со строками</p>
+    </details>
+
+    <details>
+        <summary>os</summary>
+        <p>Работа с ос, окружениями и вызовами</p>
+    </details>
+
+    <details>
+        <summary>SDL2</summary>
+        <p>Апи на Апи SDL2, для gui. Хотя, наверно для этого мне понадобятся хоть какие-то структуры или классы.</p>
+    </details>
+
+    <p>
+        Ввиду того, что все импортируемые имена кроме псевдонимов являются глобальными переменными,
+        все они могут быть изменены в процессе работы программы. Скажем, сделать PI = 13. Но это
+        имеет известные последствия, так что делать так я не рекомендую.
+    </p>
+
+</details>
+
+<hr>
+<footer>Конец.</footer>
+
+<script>
+    (function() {
+        'use strict';
+
+        function expand_thing(element) {
+            if (!element) return;
+            if (element.tagName === 'DETAILS') {
+                element.open = true;
+            }
+            let parent = element.parentElement;
+            while (parent) {
+                if (parent.tagName === 'DETAILS') {
+                    parent.open = true;
+                }
+                parent = parent.parentElement;
+            }
+        }
+
+        function navigate(hash) {
+            if (!hash || hash === '#') return;
+            const targetId = hash.substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                expand_thing(targetElement);
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href^="#"]');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            if (!href || href === '#') return;
+            e.preventDefault();
+            navigate(href);
+        });
+
+        window.addEventListener('load', function() {
+            if (window.location.hash) {
+                setTimeout(function() {
+                    navigate(window.location.hash);
+                }, 100);
+            }
+        });
+
+    })();
+</script>
+
+</body>
+</html>

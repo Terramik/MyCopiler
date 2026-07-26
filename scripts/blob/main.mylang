@@ -1,0 +1,13 @@
+from ../the_typedef import the_typedefus;
+from ../ret10 import ret10;
+from std/io import print_i;
+
+
+def main() -> (int64) {
+    var the_var the_typedefus = ret10();
+    print_i("the_var: %lli", the_var);
+    return 0;
+}
+
+
+

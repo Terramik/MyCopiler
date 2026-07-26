@@ -1,0 +1,14 @@
+from std/io import print_b;
+from ../enum import all;
+
+
+def main() -> (int64) {
+    var state1 Blobs = Blobs.A;
+    var state2 Blobs = Blobs.A;
+    print_b("%s\n", state1 == state2);
+    print_b("%s\n", state1 == Blobs.B);
+    print_b("%s\n", state1 == Blobs.C);
+    return 0;
+}
+
+

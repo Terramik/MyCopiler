@@ -1,0 +1,19 @@
+from ../../../Math/Vectors import VectorLib;
+
+
+def main() -> (int64) {
+    var v1_ float64[3] = [1.5, 3, 4.5];
+    var v1 float64[] = v1_[0:3];
+    var v2_ float64[3] = [0, 3.14, 100];
+    var v2 float64[] = v2_[0:3];
+    var vr_ float64[3];
+    var vr float64[] = vr_[0:3];
+
+    VectorLib.print(v1);
+    VectorLib.print(v2);
+    VectorLib.add(v1,v2,vr);
+    VectorLib.print(vr);
+
+
+    return 0;
+}

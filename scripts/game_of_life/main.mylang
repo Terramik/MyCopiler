@@ -1,0 +1,152 @@
+from ../defines.txt import all;
+from std/mem import alloc, free;
+from std/rand import seed, rand;
+from std/io import stdout;
+from std/time import sleep, NS;
+
+
+alias bool_s2 (bool[,]);
+alias uint8_s2 (uint8[,]);
+
+
+def print_field(field_status bool_s2) {
+    var y uint64; var x uint64;
+
+    y = 0;
+    while y < SIZE_Y {
+        x = 0;
+        while x < SIZE_X {
+            if field_status[y][x] {
+                print_c("%c", CELL_ALIVE);
+            } else {
+                print_c("%c", CELL_DEAD);
+            }
+            x = x + 1;
+        }
+        y = y + 1;
+        print_s("\n");
+    }
+}
+
+
+def update_field(field_status bool_s2, field_count uint8_s2) {
+    var y uint64; var x uint64;
+
+    # обнулим
+    y = 0;
+    while y < SIZE_Y {
+        x = 0;
+        while x < SIZE_X {
+            field_count[y][x] = 0;
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+
+    # считаем соседей
+    y = 0;
+    while y < SIZE_Y {
+        x = 0;
+        while x < SIZE_X {
+            if field_status[y][x] {
+                # мы любим пончики
+                var yp uint64 = (y + 1) % SIZE_Y;
+                var ym uint64 = (y - 1) % SIZE_Y;
+                var xp uint64 = (x + 1) % SIZE_X;
+                var xm uint64 = (x - 1) % SIZE_X;
+
+                # что такое кэш процессора? Думаю, не что-то важное.
+                field_count[ym][xm] = field_count[ym][xm] + 1;
+                field_count[ym][x] = field_count[ym][x] + 1;
+                field_count[ym][xp] = field_count[ym][xp] + 1;
+                field_count[y][xm] = field_count[y][xm] + 1;
+                field_count[y][xp] = field_count[y][xp] + 1;
+                field_count[yp][xm] = field_count[yp][xm] + 1;
+                field_count[yp][x] = field_count[yp][x] + 1;
+                field_count[yp][xp] = field_count[yp][xp] + 1;
+            }
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+
+    # теперь, обновляем сами клетки
+    y = 0;
+    while y < SIZE_Y {
+        x = 0;
+        while x < SIZE_X {
+            if field_status[y][x] {
+                if not ( 2 <= field_count[y][x] <= 3 ) {
+                    field_status[y][x] = false;
+                }
+            } else {
+                if field_count[y][x] == 3 {
+                    field_status[y][x] = true;
+                }
+            }
+            field_count[y][x] = 0;
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+}
+
+
+def main() -> (int64) {
+    # само поле
+    var field_status bool_s2 = (alloc(SIZE_X * SIZE_Y * sizeof bool) as (bool*))[0:SIZE_X, SIZE_Y];
+
+    # поле для подсчёта соседей
+    var field_count uint8_s2 = (alloc(SIZE_X * SIZE_Y * sizeof uint8) as (uint8*))[0:SIZE_X, SIZE_Y];
+
+    # наше семя
+    seed(RAND_SEED);
+
+    # зададим поле
+    {
+        var y uint64 = 0;
+        while y < SIZE_Y {
+            var x uint64 = 0;
+            while x < SIZE_X {
+                field_status[y][x] = rand() % 2;
+                #field_status[y][x] = false;
+                x = x + 1;
+            }
+            y = y + 1;
+        }
+    }
+
+
+    # наш цикл
+
+    var dt_need int64 = NS / UPS;
+    var dt int64;
+    var last_time int64;
+
+    while true {
+        last_time = now();
+
+        update_field(field_status, field_count);
+        std.puts("\033[H\033[J");
+        print_field(field_status);
+
+        dt = dt_need - (now() - last_time);
+        if dt > 0 {
+            sleep(dt);
+        }
+    }
+    
+
+    # по идеи, выйти из программы можно только через ctrl+c, так что...
+    # впрочем, он ведь и сам освободит память занятую умершими программами?
+    free(field_status as (int8*));
+    free(field_count as (int8*));
+    return 0;
+}
+
+
+
+
+
+
+

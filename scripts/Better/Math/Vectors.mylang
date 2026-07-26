@@ -1,0 +1,105 @@
+from std/math import sqrt, abs; #, cos, sin, PI;
+from std/testing import assert;
+from std/io import IOStream;
+
+
+export VectorLib;
+
+
+class VectorLib {
+    {}
+
+    alias Vector float64[];
+
+    def add(v1 Vector, v2 Vector, vr Vector) {
+        assert(lenof v1 == lenof v2 == lenof vr, "Vectors must have same lenght");
+        var i int64 = 0;
+        while i < lenof v1 {
+            vr[i] = v1[i] + v2[i];
+            i = i + 1;
+        }
+    }
+
+    def sub(v1 Vector, v2 Vector, vr Vector) {
+        assert(lenof v1 == lenof v2 == lenof vr, "Vectors must have same lenght");
+        var i int64 = 0;
+        while i < lenof v1 {
+            vr[i] = v1[i] - v2[i];
+            i = i + 1;
+        }
+    }
+
+    def mul(v1 Vector, v2 Vector, vr Vector) {
+        assert(lenof v1 == lenof v2 == lenof vr, "Vectors must have same lenght");
+        var i int64 = 0;
+        while i < lenof v1 {
+            vr[i] = v1[i] * v2[i];
+            i = i + 1;
+        }
+    }
+
+    def scale(v1 Vector, scale_ float64, vr Vector) {
+        assert(lenof v1 == lenof vr, "Vectors must have same lenght");
+        var i int64 = 0;
+        while i < lenof v1 {
+            vr[i] = v1[i] * scale_;
+            i = i + 1;
+        }
+    }
+
+    def norm(v Vector) -> (float64) {
+        var i int64 = 0;
+        var sum float64 = 0;
+        while i < lenof v {
+            sum = sum + v[i] * v[i];
+            i = i + 1;
+        }
+        return sqrt(sum);
+    }
+
+    def normalize(v Vector) {
+        var norm float64 = VectorLib.norm(v);
+        if abs(norm) > 1e-6 {
+            norm = 1 / norm;
+            var i int64 = 0;
+            while i < lenof v {
+                v[i] = v[i] * norm;
+                i = i + 1;
+            }
+        }
+    }
+
+    def dot(v1 Vector, v2 Vector) -> (float64) {
+        assert(lenof v1 == lenof v2, "Vectors must have same lenght");
+        var sum float64 = 0;
+        var i int64 = 0;
+        while i < lenof v1 {
+            sum = sum + v1[i] * v2[i];
+            i = i + 1;
+        }
+        return sum;
+    }
+    
+    def cross_2d(v1 Vector, v2 Vector) -> (float64) {
+        assert(lenof v1 == lenof v2 == 2, "Vectors must have lenght 2");
+        return v1[0] * v2[1] - v1[1] * v2[0];
+    }
+
+    def cross_3d(v1 Vector, v2 Vector, vr Vector) {
+        assert(lenof v1 == lenof v2 == lenof vr == 3, "Vectors must have same lenght 3");
+        vr[0] = v1[1] * v2[2] - v1[2] * v2[1];
+        vr[1] = v1[2] * v2[0] - v1[0] * v2[2];
+        vr[2] = v1[0] * v2[1] - v1[1] * v2[0];
+    }
+
+    def print(v Vector, stream IOStream) {
+        stream.putc('[');
+        var i int64 = 0;
+        while i < lenof v - 1 {
+            stream.print_f("%12.3f ", v[i]);
+            i = i + 1;
+        }
+        stream.print_f("%12.3f", v[lenof v - 1]);
+        stream.puts("]\n");
+    }
+}

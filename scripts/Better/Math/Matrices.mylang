@@ -1,0 +1,694 @@
+from std/math import sqrt, abs; #, cos, sin, PI;
+from std/testing import assert;
+from std/io import IOStream, stdout;
+from std/mem import alloc, free;
+from ../Vectors import VectorLib;
+
+
+export MatrixLib;
+
+
+class MatrixLib {
+    {}
+
+    alias Matrix float64[,];
+
+    def print(mtr Matrix, stream IOStream) {
+        var row uint64 = lenof mtr; var col uint64 = lenof (mtr[0]);
+        var rowi uint64 = 0; var coli uint64 = 0;
+        var row_slice float64[];
+
+        while rowi < row {
+            if rowi == 0 {
+                stream.puts("[[");
+            } else {
+                stream.puts(" [");
+            }
+
+            row_slice = mtr[rowi];
+            coli = 0;
+            while coli < col - 1 {
+                stream.print_f("%12.3f ", row_slice[coli]);
+                coli = coli + 1;
+            }
+            stream.print_f("%12.3f", row_slice[col - 1]);
+
+            if rowi == row - 1{
+                stream.puts("]]\n");
+            } else {
+                stream.puts("] \n");
+            }
+
+            rowi = rowi + 1;
+        }
+    }
+
+    def add(mtr1 Matrix, mtr2 Matrix, mtrr Matrix) {
+        assert(lenof mtr1 == lenof mtr2 == lenof mtrr and
+            lenof (mtr1[0]) == lenof (mtr2[0]) == lenof (mtrr[0]), "Matrices must have same size");
+            
+        var size uint64 = lenof mtr1 * lenof (mtr1[0]);
+        # сделаем их них плоские списки
+        var mtr1_ float64[] = mtr1[0,0:size];
+        var mtr2_ float64[] = mtr2[0,0:size];
+        var mtrr_ float64[] = mtrr[0,0:size];
+        var i uint64 = 0;
+
+        while i < size {
+            mtrr_[i] = mtr1_[i] + mtr2_[i];
+            i = i + 1;
+        }
+    }
+
+    def sub(mtr1 Matrix, mtr2 Matrix, mtrr Matrix) {
+        assert(lenof mtr1 == lenof mtr2 == lenof mtrr and
+            lenof (mtr1[0]) == lenof (mtr2[0]) == lenof (mtrr[0]), "Matrices must have same size");
+            
+        var size uint64 = lenof mtr1 * lenof (mtr1[0]);
+        var mtr1_ float64[] = mtr1[0,0:size];
+        var mtr2_ float64[] = mtr2[0,0:size];
+        var mtrr_ float64[] = mtrr[0,0:size];
+        var i uint64 = 0;
+
+        while i < size {
+            mtrr_[i] = mtr1_[i] - mtr2_[i];
+            i = i + 1;
+        }
+    }
+
+    def scale(mtr Matrix, scale float64, mtrr Matrix) {
+        assert(lenof mtr ==  lenof mtrr and
+            lenof (mtr[0]) == lenof (mtrr[0]), "Matrices must have same size");
+
+        var size uint64 = lenof mtr * lenof (mtr[0]);
+        var mtr_ float64[] = mtr[0,0:size];
+        var mtrr_ float64[] = mtrr[0,0:size];
+        var i uint64 = 0;
+
+        while i < size {
+            mtrr_[i] = mtr_[i] * scale;
+            i = i + 1;
+        }
+    }
+
+    def mul(mtr1 Matrix, mtr2 Matrix, mtrr Matrix) {
+        # assume, mtr1 MxN, mtr2 NxG, mtrr MxG
+        assert(lenof (mtr1[0]) == lenof mtr2, "mtr1 cols and mtr2 rows must be same size");
+        assert(lenof mtr1 == lenof mtrr, "mtr1 rows and mtrr rows must be same size");
+        assert(lenof (mtr2[0]) == lenof (mtrr[0]), "mtr2 cols and mtrr cols must be same size");
+        var M uint64 = lenof mtr1; var N uint64 = lenof mtr2; var G uint64 = lenof (mtrr[0]);
+        var Mi uint64 = 0; var Ni uint64 = 0; var Gi uint64 = 0;
+
+        while Mi < M {
+            Gi = 0;
+            while Gi < G {
+                var sum float64 = 0;
+
+                # what is processor cash? who knows? maybe it is something important?
+                Ni = 0;
+                while Ni < N {
+                    sum = sum + mtr1[Mi, Ni] * mtr2[Ni, Gi];
+                    Ni = Ni + 1;
+                }
+                mtrr[Mi, Gi] = sum;
+
+                Gi = Gi + 1;
+            }            
+            Mi = Mi + 1;
+        }
+    }
+
+    def apply(mtr Matrix, v float64[], vr float64[]) {
+        assert(lenof (mtr[0]) == lenof v, "len of v must match mtr cols");
+        assert(lenof mtr == lenof vr, "len of vr must match mtr rows");
+        # mtr MxN, v N, vr M
+        var M uint64 = lenof mtr; var N uint64 = lenof v;
+        var Mi uint64 = 0; var Ni uint64 = 0;
+        var mtr_row float64[];
+
+        while Mi < M {
+            var sum float64 = 0;
+            mtr_row = mtr[Mi];
+
+            Ni = 0;
+            while Ni < N {
+                sum = sum + mtr_row[Ni] * v[Ni];
+                Ni = Ni + 1;
+            }
+            vr[Mi] = sum;
+
+            Mi = Mi + 1;
+        }
+    }
+
+    def transpose(mtr Matrix, mtrr Matrix) {
+        assert(lenof mtr == lenof (mtrr[0]) and lenof mtrr == lenof (mtr[0]), "matrix mtrr must have mtr coluns rows and mtr rows columns");
+        var M uint64 = lenof mtr; var N uint64 = lenof mtrr;
+        var Mi uint64 = 0; var Ni uint64 = 0;
+
+        # well, i dont think i'll make some 1000x1000 matrices for something like ML, for now, so...
+        while Mi < M {
+            Ni = 0;
+            while Ni < N {
+                mtrr[Ni, Mi] = mtr[Mi, Ni];
+                Ni = Ni + 1;
+            }
+            Mi = Mi + 1;
+        }
+    }
+
+    def _gauss_move(mtr Matrix, row_from uint64, row_to uint64, col_start uint64) {
+        var cols uint64 = lenof (mtr[0]);
+        var row_from_ float64[] = mtr[row_from];
+        var row_to_ float64[] = mtr[row_to];
+
+        while col_start < cols {
+            row_from_[col_start], row_to_[col_start] = row_to_[col_start], row_from_[col_start];
+            col_start = col_start + 1;
+        }
+    }
+    
+    def _gauss_copy(mtr Matrix, row_from uint64, row_to uint64, col_start uint64) {
+        var cols uint64 = lenof (mtr[0]);
+        var row_from_ float64[] = mtr[row_from];
+        var row_to_ float64[] = mtr[row_to];
+
+        while col_start < cols {
+            row_to_[col_start] = row_from_[col_start];
+            col_start = col_start + 1;
+        }
+    }
+
+    def _gauss_scale(mtr Matrix, row uint64, scale float64, col_start uint64) {
+        var cols uint64 = lenof (mtr[0]);
+        var row_ float64[] = mtr[row];
+
+        while col_start < cols {
+            row_[col_start] = row_[col_start] * scale;
+            col_start = col_start + 1;
+        }
+    }
+
+    def _gauss_add_to(mtr Matrix, row_from uint64, row_to uint64, col_start uint64) {
+        var cols uint64 = lenof (mtr[0]);
+        var row_from_ float64[] = mtr[row_from];
+        var row_to_ float64[] = mtr[row_to];
+
+        while col_start < cols {
+            row_to_[col_start] = row_to_[col_start] + row_from_[col_start];
+            col_start = col_start + 1;
+        }
+    }
+
+    def _gauss_add_to_scale(mtr Matrix, row_from uint64, row_to uint64, scale float64, col_start uint64) {
+        var cols uint64 = lenof (mtr[0]);
+        var row_from_ float64[] = mtr[row_from];
+        var row_to_ float64[] = mtr[row_to];
+
+        while col_start < cols {
+            row_to_[col_start] = row_to_[col_start] + row_from_[col_start] * scale;
+            col_start = col_start + 1;
+        }
+    }
+
+
+    def det(mtr Matrix) -> (float64) {
+        assert(lenof mtr == lenof (mtr[0]), "Determinant exist only for square matrices");
+        var N uint64 = lenof mtr;
+        var rowi uint64 = 0; var coli uint64 = 0;
+
+        var change_sing bool = false;
+        var det float64 = 1;
+
+        while (coli < N) {
+            rowi = coli;
+            # finding pivot
+            var pivot_val float64 = abs(mtr[rowi][coli]);
+            var pivot_indx uint64 = rowi;
+            rowi = rowi + 1;
+            while rowi < N {
+                if abs(mtr[rowi][coli]) > pivot_val {
+                    pivot_val = abs(mtr[rowi][coli]);
+                    pivot_indx = rowi;
+                }
+                rowi = rowi + 1;
+            }
+
+            if pivot_indx != coli {
+                MatrixLib._gauss_move(mtr, pivot_indx, coli, coli);
+                change_sing = not change_sing;
+            }
+            # nullifying everything below
+            if pivot_val > 1e-6 {
+                var pivot_inv float64 = -1 / mtr[coli, coli];
+
+                rowi = coli + 1;
+                while rowi < N {
+                    MatrixLib._gauss_add_to_scale(mtr, coli, rowi, pivot_inv * mtr[rowi, coli], coli);
+                    rowi = rowi + 1;
+                }
+            } else {
+                return 0; 
+            }
+
+            det = det * mtr[coli, coli];
+
+            coli = coli + 1;
+        }
+
+        if change_sing {
+            return -det;
+        } else {
+            return det;
+        }
+    }
+
+    def rank(mtr Matrix) -> (uint64) {
+        var rows uint64 = lenof mtr; var cols uint64 = lenof (mtr[0]);
+        var rowi uint64 = 0; var coli uint64 = 0;
+        var min uint64;
+        if rows > cols { min = cols; } else { min = rows; }
+
+        var rank uint64 = 0;
+
+        while (coli < min) {
+            rowi = coli;
+            
+            var pivot_val float64 = abs(mtr[rowi][coli]);
+            var pivot_indx uint64 = rowi;
+            rowi = rowi + 1;
+            while rowi < rows {
+                if abs(mtr[rowi][coli]) > pivot_val {
+                    pivot_val = abs(mtr[rowi][coli]);
+                    pivot_indx = rowi;
+                }
+                rowi = rowi + 1;
+            }
+
+            if pivot_indx != coli {
+                MatrixLib._gauss_move(mtr, pivot_indx, coli, coli);
+            }
+
+            if pivot_val > 1e-6 {
+                var pivot_inv float64 = -1 / mtr[coli, coli];
+
+                rowi = coli + 1;
+                while rowi < rows {
+                    MatrixLib._gauss_add_to_scale(mtr, coli, rowi, pivot_inv * mtr[rowi, coli], coli);
+                    rowi = rowi + 1;
+                }
+                rank = rank + 1;
+            }
+
+            coli = coli + 1;
+        }
+
+        return rank;
+    }
+
+    def inv(mtr Matrix, mtrr Matrix) -> (bool) {
+        assert(lenof mtr == lenof mtrr and lenof (mtr[0]) == lenof (mtrr[0]) and lenof mtr == lenof (mtr[0]), "Both matrices must be same and square");
+        var N uint64 = lenof mtr;
+        var rowi uint64 = 0; var coli uint64 = 0;
+
+        # turn mtrr into indentity matrix
+        while (coli < N) {
+            rowi = 0;
+            var r float64[] = mtrr[coli];
+            while rowi < N {
+                if coli == rowi {
+                    r[rowi] = 1;
+                } else {
+                    r[rowi] = 0;
+                }
+                rowi = rowi + 1;
+            }
+            coli = coli + 1;
+        }
+
+        # now, gauss
+        coli = 0;
+        while (coli < N) {
+            rowi = coli;
+            
+            var pivot_val float64 = abs(mtr[rowi][coli]);
+            var pivot_indx uint64 = rowi;
+            rowi = rowi + 1;
+            while rowi < N {
+                if abs(mtr[rowi][coli]) > pivot_val {
+                    pivot_val = abs(mtr[rowi][coli]);
+                    pivot_indx = rowi;
+                }
+                rowi = rowi + 1;
+            }
+
+            if pivot_indx != coli {
+                MatrixLib._gauss_move(mtr, pivot_indx, coli, coli);
+                MatrixLib._gauss_move(mtrr, pivot_indx, coli, coli);
+            }
+
+            if pivot_val > 1e-6 {
+                var pivot_inv float64 = 1 / mtr[coli, coli];
+                MatrixLib._gauss_scale(mtr, coli, pivot_inv, coli);
+                MatrixLib._gauss_scale(mtrr, coli, pivot_inv, coli);
+
+                rowi = 0;
+                while rowi < N {
+                    if rowi == coli {rowi = rowi + 1; continue;}
+                    var scale float64 = -mtr[rowi, coli];
+                    MatrixLib._gauss_add_to_scale(mtr, coli, rowi, scale, coli);
+                    MatrixLib._gauss_add_to_scale(mtrr, coli, rowi, scale, coli);
+                    rowi = rowi + 1;
+                }
+            } else {
+                return false;
+            }
+
+            coli = coli + 1;
+        }
+
+        return true;
+    }
+
+    def ref(mtr Matrix) -> (uint64) {
+        var rows uint64 = lenof mtr; var cols uint64 = lenof (mtr[0]);
+        var rowi uint64 = 0; var coli uint64 = 0;
+        var min uint64;
+        if rows > cols { min = cols; } else { min = rows; }
+
+        while (coli < min) {
+            rowi = coli;
+            
+            var pivot_val float64 = abs(mtr[rowi][coli]);
+            var pivot_indx uint64 = rowi;
+            rowi = rowi + 1;
+            while rowi < rows {
+                if abs(mtr[rowi][coli]) > pivot_val {
+                    pivot_val = abs(mtr[rowi][coli]);
+                    pivot_indx = rowi;
+                }
+                rowi = rowi + 1;
+            }
+
+            if pivot_indx != coli {
+                MatrixLib._gauss_move(mtr, pivot_indx, coli, coli);
+            }
+
+            if pivot_val > 1e-6 {
+                var pivot_inv float64 = -1 / mtr[coli, coli];
+
+                rowi = coli + 1;
+                while rowi < rows {
+                    MatrixLib._gauss_add_to_scale(mtr, coli, rowi, pivot_inv * mtr[rowi, coli], coli);
+                    rowi = rowi + 1;
+                }
+            }
+
+            coli = coli + 1;
+        }
+    }
+    
+    def rref(mtr Matrix) -> (uint64) {
+        var rows uint64 = lenof mtr; var cols uint64 = lenof (mtr[0]);
+        var rowi uint64 = 0; var coli uint64 = 0;
+        var min uint64;
+        if rows > cols { min = cols; } else { min = rows; }
+
+        while (coli < min) {
+            rowi = coli;
+            var pivot_val float64 = abs(mtr[rowi][coli]);
+            var pivot_indx uint64 = rowi;
+            rowi = rowi + 1;
+            while rowi < rows {
+                if abs(mtr[rowi][coli]) > pivot_val {
+                    pivot_val = abs(mtr[rowi][coli]);
+                    pivot_indx = rowi;
+                }
+                rowi = rowi + 1;
+            }
+
+            if pivot_indx != coli {
+                MatrixLib._gauss_move(mtr, pivot_indx, coli, coli);
+            }
+
+            if pivot_val > 1e-6 {
+                var pivot_inv float64 = -1 / mtr[coli, coli];
+                
+                rowi = 0;
+                while rowi < coli {
+                    MatrixLib._gauss_add_to_scale(mtr, coli, rowi, pivot_inv * mtr[rowi, coli], coli);
+                    rowi = rowi + 1;
+                }
+                rowi = rowi + 1;
+                while rowi < rows {
+                    MatrixLib._gauss_add_to_scale(mtr, coli, rowi, pivot_inv * mtr[rowi, coli], coli);
+                    rowi = rowi + 1;
+                }
+            }
+
+            coli = coli + 1;
+        }
+    }
+
+    def span(mtr Matrix, res Matrix) -> (uint64) {
+        assert(lenof mtr == lenof (res[0]) and lenof res == lenof (mtr[0]), "res must have mtr coluns rows and mtr rows columns");
+
+        MatrixLib.transpose(mtr, res);
+        MatrixLib.ref(res);
+
+        var rows uint64 = lenof res; var cols uint64 = lenof (res[0]);
+        var rowi uint64 = 0; var coli uint64 = 0;
+
+        rowi = 0;
+        while rowi < rows {
+            coli = 0;
+
+            var nonzeros bool = false;
+            var row float64[] = res[rowi];
+
+            while coli < cols {
+                if abs(row[coli]) > 1e-6 {
+                    nonzeros = true;
+                    break;
+                }
+                coli = coli + 1;
+            }
+            if not nonzeros {
+                break;
+            }
+            rowi = rowi + 1;
+        }
+
+        return rowi;
+    }
+
+    def find_pivots(mtr Matrix) -> (uint64[]) {
+        #result is a uint64[mtr rows], i element stores index of column, where pivot stored(and (-1) as uint64 if there is no pivot in row) for i row
+        var rows uint64 = lenof mtr; var cols uint64 = lenof (mtr[0]);
+        var rowi uint64 = 0; var coli uint64 = 0;
+
+        # thing will have (-1) as uint64 if there is no pivot in col, or index of row if there is
+        var thing uint64[] = (alloc(cols * sizeof uint64) as uint64*)[:cols];
+        while coli < cols {
+            thing[coli] = (-2) as uint64;
+            coli = coli + 1;
+        }
+        coli = 0;
+
+        while rowi < rows {
+            var mtrr float64[] = mtr[rowi];
+            coli = 0;
+
+            while coli < cols {
+                if abs(mtrr[coli]) > 1e-6 {
+                    if thing[coli] == (-2) as uint64 {
+                        thing[coli] = rowi;
+                    } else {
+                        thing[coli] = (-1) as uint64;
+                    }
+                }
+                coli = coli + 1;
+            }
+            rowi = rowi + 1;
+        }
+
+        var res uint64[] = (alloc(rows * sizeof uint64) as uint64*)[:rows];
+
+        rowi = 0;
+        while rowi < rows {
+            res[rowi] = (-1) as uint64;
+            rowi = rowi + 1;
+        }
+
+        coli = cols - 1;
+        while coli < cols {
+            if (thing[coli] != (-1) as uint64) and (thing[coli] != (-2) as uint64) {
+                res[thing[coli]] = coli;
+            }
+            coli = coli - 1;
+        }
+        
+        free(thing as int8*);
+
+        return res;
+    }
+
+    def ker(mtr Matrix, res Matrix) -> (uint64) {
+        assert(lenof (mtr[0]) == lenof res and lenof (mtr[0]) == lenof (res[0]), "res must have mtr cols rows and cols");
+
+        var n uint64 = lenof res;
+        var rowi uint64 = 0; var coli uint64 = 0;
+
+
+        # copy
+        {
+            var mtrr float64[]; var resr float64[];
+
+            # from mtr
+            while rowi < lenof mtr {
+                mtrr = mtr[rowi]; resr = res[rowi];
+
+                coli = 0;
+                while coli < n {
+                    resr[coli] = mtrr[coli];
+                    coli = coli + 1;
+                }
+                rowi = rowi + 1;
+            }
+            # rest is zeros
+            while rowi < n {
+                resr = res[rowi];
+                coli = 0;
+                while coli < n {
+                    resr[coli] = 0;
+                    coli = coli + 1;
+                }
+                rowi = rowi + 1;
+            }
+        }
+
+        # solve
+        {
+            MatrixLib.rref(res);
+
+            var pivots uint64[] = MatrixLib.find_pivots(res);
+
+            rowi = 0;
+            while rowi < n {
+                var resr float64[] = res[rowi];
+                # there is no pivot
+                if pivots[rowi] == (-1) as uint64 {
+                    coli = 0;
+                    while coli < n {
+                        resr[coli] = 0;
+                        coli = coli + 1;
+                    }
+                    resr[rowi] = 1;
+                    rowi = rowi + 1;
+
+                } else {
+                    # pivot on it's place
+                    if pivots[rowi] == rowi {
+                        var pivot float64 = -1 / resr[rowi];
+                        resr[rowi] = 0;
+
+                        coli = 0;
+                        while coli < n {
+                            resr[coli] = resr[coli] * pivot;
+                            coli = coli + 1;
+                        }
+                        rowi = rowi + 1;
+                    } else {
+                        MatrixLib._gauss_move(res, rowi, pivots[rowi], 0);
+                    }
+                }
+            }
+            free(pivots as int8*);
+        }
+
+        # transpose and remove zeros 
+        {
+            # transpose inplace
+            rowi = 0;
+            while rowi < n {
+                coli = 0;
+                while coli <= rowi {
+                    res[rowi, coli], res[coli, rowi] = res[coli, rowi], res[rowi, coli];
+                    coli = coli + 1;
+                }
+                rowi = rowi + 1;
+            }
+
+            # now, remove zero rows
+            var rowi_cur uint64 = 0;
+            var rowi_first_zeros uint64 = 0;
+
+            while rowi_cur < n {
+                var resr float64[] = res[rowi_cur];
+                var is_row_zero bool = true;
+                coli = 0;
+                while coli < n {
+                    if abs(resr[coli]) > 1e-6 {
+                        is_row_zero = false;
+                        break;
+                    }
+                    coli = coli + 1;
+                }
+
+                if not is_row_zero {
+                    if rowi_cur != rowi_first_zeros {
+                        MatrixLib._gauss_copy(res, rowi_cur, rowi_first_zeros, 0);
+                    }
+                    rowi_first_zeros = rowi_first_zeros + 1;
+                }
+                rowi_cur = rowi_cur + 1;
+            }
+            
+            return rowi_first_zeros;
+        }
+
+    }
+
+
+
+}
+
+
+
+
+def main() {
+    var mtr float64[4][3] = [
+        [5.0, 4.0, 3.0, 0],
+        [2.0, 2.0, 2.0, 0],
+        [1.0, 1.0, 1.0, 0]
+    ];
+    var res float64[4][4];
+
+    #var mtr float64[6][4] = [
+    #    [0.0, 1, 2, 0, 0, 0],
+    #    [0.0, 1, 0, 0, 0, 1],
+    #    [0.0, 0, 2, 1, 0, 0],
+    #    [1.0, 3, 0, 0, 0, 0]
+    #];
+
+    #MatrixLib.rref(mtr[:]);
+    MatrixLib.print(mtr[:4,3], stdout);
+    var ker_vectors uint64 = MatrixLib.ker(mtr[:4,3], res[:4,4]);
+    var ress float64[,] = res[:lenof res, ker_vectors];
+    MatrixLib.print(ress, stdout);
+
+    #MatrixLib.print(res[:3,3], stdout);
+
+    #var span uint64 = MatrixLib.span(mtr[:], res[:]);
+    #MatrixLib.print(mtr[:], stdout);
+    #stdout.print_u("%u\n", span);
+    #if span > 0 {
+        #var ress float64[,] = res[:3, span];
+        #MatrixLib.print(ress, stdout);
+    #}
+    
+
+
+
+    
+}

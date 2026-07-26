@@ -1,0 +1,131 @@
+from ../defines import all;
+from std/mem import free, alloc, realloc, NULL;
+from std/testing import assert;
+
+
+export StackFloat, StackOperators;
+
+
+class StackFloat {
+    {
+        data float64[];
+        size uint64;
+        elements_num uint64;
+        good bool;
+
+    }
+
+    def __init__(self StackFloat, size uint64) -> (StackFloat) {
+        var data int8* = alloc(size * sizeof float64);
+        if data == NULL {
+            self.good = false;
+            return self;
+        }
+        self.data = (data as float64*)[:size];
+        self.size = size;
+        self.elements_num = 0;
+        self.good = true;
+        return self;
+    }
+
+    def __bool__(self StackFloat) -> (bool) {
+        return self.good and self.elements_num != 0;
+    }
+
+    def __del__(self StackFloat) {
+        free(self.data as int8*);
+    }
+
+    def _extend(self StackFloat*, new_size uint64) {
+        var data int8* = realloc(self->data as int8*, new_size * sizeof float64);
+        if data == NULL {
+            self->good = false;
+        }
+        self->data = (data as float64*)[:new_size];
+        self->size = new_size;
+    }
+
+    def put(self StackFloat*, elem float64) {
+        if (self->elements_num >= self->size ) {
+            self->_extend(self->size + self->size / 2);
+            if not self->good {
+                return;
+            }
+        }
+        self->data[self->elements_num] = elem;
+        self->elements_num = self->elements_num + 1;
+    }
+
+    def pop(self StackFloat*) -> (float64) {
+        assert(self->elements_num != 0, "blob");
+        self->elements_num = self->elements_num - 1;
+        return self->data[self->elements_num];
+    }
+}
+
+
+class StackOperators {
+    {
+        data Operators[];
+        size uint64;
+        elements_num uint64;
+        good bool;
+
+    }
+
+    def __init__(self StackOperators, size uint64) -> (StackOperators) {
+        var data int8* = alloc(size * sizeof Operators);
+        if data == NULL {
+            self.good = false;
+            return self;
+        }
+        self.data = (data as Operators*)[:size];
+        self.size = size;
+        self.elements_num = 0;
+        self.good = true;
+        return self;
+    }
+
+    def __bool__(self StackOperators) -> (bool) {
+        return self.good and self.elements_num != 0;
+    }
+
+    def __del__(self StackOperators) {
+        free(self.data as int8*);
+    }
+
+    def _extend(self StackOperators*, new_size uint64) {
+        var data int8* = realloc(self->data as int8*, new_size * sizeof Operators);
+        if data == NULL {
+            self->good = false;
+        }
+        self->data = (data as Operators*)[:new_size];
+        self->size = new_size;
+    }
+
+    def put(self StackOperators*, elem Operators) {
+        if (self->elements_num >= self->size ) {
+            self->_extend(self->size + self->size / 2);
+            if not self->good {
+                return;
+            }
+        }
+        self->data[self->elements_num] = elem;
+        self->elements_num = self->elements_num + 1;
+    }
+
+    def pop(self StackOperators*) -> (Operators) {
+        assert(self->elements_num != 0, "blob");
+        self->elements_num = self->elements_num - 1;
+        return self->data[self->elements_num];
+    }
+
+    def head(self StackOperators*) -> (Operators) {
+        assert(self->elements_num != 0, "blob");
+        return self->data[self->elements_num - 1];
+    }
+}
+
+
+
+

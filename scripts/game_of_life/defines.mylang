@@ -1,0 +1,16 @@
+from std/time import now;
+
+var SIZE_X uint64 = 70;
+var SIZE_Y uint64 = 15;
+
+var UPS uint64 = 5;
+
+var CELL_ALIVE int8 = 'O';
+var CELL_DEAD int8 = ' ';
+
+var RAND_SEED uint64 = now();
+# var RAND_SEED uint64 = 1;
+
+export all;
+
+

@@ -1,0 +1,31 @@
+from std/io import stdout, stderr, IOStream;
+
+
+def main() -> (int64) {
+    stdout.print_f("12+2=%12.3f\n\n", 102.1514);
+    stdout.print_f("0.1+0.2=%100.90f\n\n", 0.1+0.2);
+    stdout.print_u("-1 is %u\n", (-1) as uint64);
+    stdout.print_i("{{%10i}}\n", 10-100+1000-10000);
+    stdout.print_b("%tb\n", false);
+    stdout.print_b("%b\n", true);
+    stdout.print_c("%c\t", '1');
+    stdout.print_c("%c\t", '\n');
+    stdout.print_c("%c\t", 't');
+    stdout.print_c("%c\t", 100);
+    stdout.print_c("%c\n", 200);
+
+    stderr.print_b("\tSomethign go whong, thing is %tb\n", false);
+
+    var file IOStream = IOStream.open("hello.txt", "w");
+    if file.good() {
+        file.puts("Hello, World!\n");
+        file.print_f("0.1+0.2=%1000.980f\n", 0.1+0.2);
+    }
+    #del file;
+
+
+    stdout.puts("Hello, World!");
+    stdout.putc('\n');
+
+    return 0;
+}
