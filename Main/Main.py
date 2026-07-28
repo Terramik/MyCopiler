@@ -3,6 +3,7 @@ from .TransferToC import transfer_to_c
 from pathlib import Path
 from ..Definitions.Exceptions import *
 from .Errors import print_error_location
+from .Settings import settings_load
 import shutil
 
 
@@ -18,6 +19,10 @@ file_path = path_to_scripts / r'Better\Math\Matrices.mylang'
 
 result_path = path_to_scripts / r'result'
 
+
+settings = settings_load()
+if settings is None:
+    raise ValueError('Не удалось загрузить настройки')
 
 if not file_path.exists():
     raise FileNotFoundError('Такого файле нет.')
