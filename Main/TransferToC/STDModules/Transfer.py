@@ -7,6 +7,7 @@ from ..Types.Simple import TransferSlicingData
 from ....Definitions import TypesShortener as types
 from pathlib import Path
 from typing import TextIO
+import subprocess
 import pickle
 
 
@@ -102,12 +103,18 @@ def transfer_cls(f_h: TextIO, f_c: TextIO, cls: ControlClass, realisation: dict[
     ''')
 
 
-def write_module(name: str, mod: Module, path: Path, data: DataContainer):
+def write_module(name: str, mod: Module, path: Path, data: DataContainer, compiler: str, all_obj: list[Path]):
     realization = std_realization[name]
     initializers: list[str] = []
 
-    with open((path / 'include' / f'{name}_our').with_suffix('.h'), 'w') as f_h:
-        with open((path / 'src' / f'{name}_our').with_suffix('.c'), 'w') as f_c:
+    path_c = path / 'include' / f'{name}_our.c'
+    path_h = path / 'src' / f'{name}_our.h'
+    path_o = path / 'obj' / f'{name}_our.o'
+    all_obj.append(path_o)
+
+    # собственно пишем
+    with open(path_h, 'w') as f_h:
+        with open(path_c, 'w') as f_c:
             f_h.write(f'''
 #ifndef {name.upper()}_OUR_H
 #define {name.upper()}_OUR_H
@@ -115,14 +122,8 @@ def write_module(name: str, mod: Module, path: Path, data: DataContainer):
 #include "base.h"
 
 void vars_initializer_{name}();
-            
+    
 ''')
-
-            def initializers_final(module: Module, file: TextIO, data: DataContainer, initializers: list[str]):
-                # у глобальных переменных(и классов, и т.д.) есть штуки для инициализации,
-                # создадим специальную функцию чтобы их собственно применить
-                if initializers:
-                    module.global_variables_initializer = get_unique_name(data.all_names, 'vars_initializer')
 
 
             f_c.write('''
@@ -145,19 +146,27 @@ void vars_initializer_{name}();
 
             # и инициализатор
             f_c.write(
-                f'void vars_initializer_{name}()''{'
-                    f'{
-                        ''.join(initializers)
-                    }'
-                '}'
-            )
-
+f'void vars_initializer_{name}()''{'
+    f'{
+        ''.join(initializers)
+    }'
+'}')
             f_h.write('''
 #endif
 ''')
 
+    # и скомпилируем .c в .o
+    result = subprocess.run([compiler, '-c', path_c.as_posix(), '-o', path_o.as_posix(),
+                             f'-I{(path / 'include').as_posix()}', '-O2'],
+                            capture_output=True, text=True)
 
-def retransfer_str_modules():
+    if result.returncode != 0:
+        raise ValueError(f'Критическая ошибка при компиляции объектников: \n{result.stderr}')
+
+
+
+def retransfer_str_modules(compiler: str):
+    # собираем все типы, имена и модули
     all_std_modules = [m for m in std_modules.values()]
     data = DataContainer()
     all_types = collect_all_types(all_std_modules)
@@ -197,6 +206,7 @@ def retransfer_str_modules():
 
     file_path = Path(__file__).parent / 'realization'
 
+    # делаем base.h
     with open(file_path / 'include/base.h', 'w') as f:
         f.write('''
 #ifndef PROJECT_BASE_H
@@ -224,9 +234,19 @@ def retransfer_str_modules():
 #endif
 
 ''')
+    # сами модули
+    all_obj = []
     for name, std in std_modules.items():
-        write_module(name, std, file_path, data)
+        write_module(name, std, file_path, data, compiler, all_obj)
 
+    # сделаем из объектников статистическую библиотеку
+    result = subprocess.run(['ar', 'rcs', file_path / 'libstd.a'] + all_obj,
+                            capture_output=True, text=True)
+
+    if result.returncode != 0:
+        raise ValueError(f'Критическая ошибка при сборке статической библиотеки: \n{result.stderr}')
+
+    # и сохраняем
     with open(file_path / '../pickle_things/all_types.pkl', 'wb') as f:
         pickle.dump(all_types,  f)
     with open(file_path / '../pickle_things/all_slices.pkl', 'wb') as f:
@@ -234,4 +254,3 @@ def retransfer_str_modules():
     with open(file_path / '../pickle_things/data.pkl', 'wb') as f:
         pickle.dump(data, f)
 
-# retransfer_str_modules()

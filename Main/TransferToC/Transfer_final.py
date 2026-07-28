@@ -4,7 +4,7 @@ from .Transforms import *
 from .Transfer import *
 from .STDModules import *
 from .MakeMain import make_main
-from .MakeMakefile import make_makefile
+from .Compile import compile_
 from .Types.Simple import IteratorModule
 
 from ...Definitions.Scopes import *
@@ -49,9 +49,7 @@ def set_paths(module: list[Module], dest_path: Path):
     CaclPaths(common, dest_path).many_modules(module)
 
 
-def transfer(module: Module | list[Module], result_path: Path):
-    # retransfer_str_modules()
-
+def transfer(module: Module | list[Module], result_path: Path, compiler: str):
     if isinstance(module, Module):
         module = [module]
 
@@ -100,7 +98,7 @@ def transfer(module: Module | list[Module], result_path: Path):
 
     # и теперь main
     make_main(module, result_path)
-    # и makefile
-    make_makefile(module, result_path)
+    # и всё
+    compile_(module, result_path, compiler)
 
 

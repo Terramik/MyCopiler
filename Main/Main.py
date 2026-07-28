@@ -1,5 +1,5 @@
 from .Modules import make_modules
-from .TransferToC import transfer_to_c
+from .TransferToC import transfer_to_c, retransfer_str_modules
 from pathlib import Path
 from ..Definitions.Exceptions import *
 from .Errors import print_error_location
@@ -91,10 +91,10 @@ match args.command:
         else:
             if result_path.exists():
                 shutil.rmtree(result_path)
-            transfer_to_c(the_module, result_path)
+            transfer_to_c(the_module, result_path, args.compiler)
 
     case 'retransfer_std_modules':
-        ...
+        retransfer_str_modules(args.compiler)
     case _:
         raise ValueError('Неправельные команды')
 

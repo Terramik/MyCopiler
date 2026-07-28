@@ -4,7 +4,8 @@ from ..Types.Simple import TransferSlicingData
 import pickle
 
 
-__all__ = ('load_std_data', 'get_path_to_std_module', 'get_path_to_std_header')
+__all__ = ('load_std_data', 'get_path_to_std_header', 'get_path_to_std_lib')
+
 
 path_to_file = Path(__file__).resolve().parent
 
@@ -23,23 +24,9 @@ def load_std_data() -> tuple[
     return all_types, all_slices, data
 
 
-def get_path_to_std_module(name: str) -> str:
-    match name:
-        case 'io':
-            return (path_to_file / r'realization\src\io_our.c').as_posix()
-        case 'math':
-            return (path_to_file / r'realization\src\math_our.c').as_posix()
-        case 'mem':
-            return (path_to_file / r'realization\src\mem_our.c').as_posix()
-        case 'rand':
-            return (path_to_file / r'realization\src\rand_our.c').as_posix()
-        case 'testing':
-            return (path_to_file / r'realization\src\testing_our.c').as_posix()
-        case 'time':
-            return (path_to_file / r'realization\src\time_our.c').as_posix()
-        case _:
-            raise ValueError()
-
-
 def get_path_to_std_header() -> str:
-    return (path_to_file / r'realization\include').as_posix()
+    return (path_to_file / 'realization/include').as_posix()
+
+
+def get_path_to_std_lib() -> str:
+    return (path_to_file / 'realization/libstd.a').as_posix()

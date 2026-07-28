@@ -656,13 +656,13 @@ class MatrixLib {
 
 
 
-def main() {
-    var mtr float64[4][3] = [
-        [5.0, 4.0, 3.0, 0],
-        [2.0, 2.0, 2.0, 0],
-        [1.0, 1.0, 1.0, 0]
-    ];
-    var res float64[4][4];
+#def main() {
+    #var mtr float64[4][3] = [
+        #[5.0, 4.0, 3.0, 0],
+        #[2.0, 2.0, 2.0, 0],
+        #[1.0, 1.0, 1.0, 0]
+    #];
+    #var res float64[4][4];
 
     #var mtr float64[6][4] = [
     #    [0.0, 1, 2, 0, 0, 0],
@@ -672,10 +672,10 @@ def main() {
     #];
 
     #MatrixLib.rref(mtr[:]);
-    MatrixLib.print(mtr[:4,3], stdout);
-    var ker_vectors uint64 = MatrixLib.ker(mtr[:4,3], res[:4,4]);
-    var ress float64[,] = res[:lenof res, ker_vectors];
-    MatrixLib.print(ress, stdout);
+    #MatrixLib.print(mtr[:4,3], stdout);
+    #var ker_vectors uint64 = MatrixLib.ker(mtr[:4,3], res[:4,4]);
+    #var ress float64[,] = res[:lenof res, ker_vectors];
+    #MatrixLib.print(ress, stdout);
 
     #MatrixLib.print(res[:3,3], stdout);
 
@@ -686,9 +686,4 @@ def main() {
         #var ress float64[,] = res[:3, span];
         #MatrixLib.print(ress, stdout);
     #}
-    
-
-
-
-    
-}
+#}

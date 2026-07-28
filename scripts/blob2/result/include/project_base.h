@@ -1,6 +1,0 @@
-
-#ifndef PROJ_5783707030114014331_BASE_H
-#define PROJ_5783707030114014331_BASE_H
-#include "base.h"
-
-#endif
