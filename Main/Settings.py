@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 
 __all__ = ('settings_create', 'settings_load')
@@ -9,13 +10,16 @@ base_settings = {
 }
 
 
+relpath = Path(__file__).parent
+
+
 def settings_create():
-    with open('../Settings.json', 'w') as f:
+    with open(relpath / '../Settings.json', 'w') as f:
         json.dump(base_settings, f, indent=4)
 
 
 def settings_load() -> dict | None:
-    with open('../Settings.json', 'r') as f:
+    with open(relpath / '../Settings.json', 'r') as f:
         res = json.load(f)
         if isinstance(res, dict) and \
             set(res) == set(base_settings):

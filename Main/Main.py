@@ -5,6 +5,8 @@ from ..Definitions.Exceptions import *
 from .Errors import print_error_location
 from .Settings import settings_load
 import shutil
+import argparse
+import sys
 
 
 path_to_scripts = (Path(__file__).resolve().parent.parent / 'scripts')
@@ -20,26 +22,84 @@ file_path = path_to_scripts / r'Better\Math\Matrices.mylang'
 result_path = path_to_scripts / r'result'
 
 
+# ===== Настройки =====
+
 settings = settings_load()
 if settings is None:
     raise ValueError('Не удалось загрузить настройки')
 
-if not file_path.exists():
-    raise FileNotFoundError('Такого файле нет.')
 
-try:
-    the_module = make_modules(file_path)
-except OurSyntaxError as err:
-    print_error_location(err.position)
-    print(err)
-except SemanticError as err:
-    print_error_location(err.position)
-    print(err)
-    # raise err
-else:
-    if result_path.exists():
-        shutil.rmtree(result_path)
-    transfer_to_c(the_module, result_path)
+# ===== Аргументы =====
+
+# делаем штуку
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(dest='command', help='Доступные команды')
+
+# пересборка модулей
+parser_retransfer = subparsers.add_parser('retransfer_std_modules',
+                                          help='Пересобрать стандартные модули')
+parser_retransfer.add_argument('-compiler', '--compiler', default=settings['compiler'], help='Компилятор C')
+
+# обычная компиляция
+parser_compile = subparsers.add_parser('compile', help='Скомпилировать файл')
+parser_compile.add_argument('input', help='Входной файл')
+parser_compile.add_argument('output', help='Выходной файл')
+parser_compile.add_argument('-compiler', '--compiler', default=settings['compiler'], help='Компилятор C')
+
+
+# используем
+
+# вставим 'compile' неявно
+if len(sys.argv) >= 2 and sys.argv[1] not in ('retransfer_std_modules', 'compile', '-h', '--help'):
+    sys.argv.insert(1, 'compile')
+
+args = parser.parse_args()
+
+
+# ===== Основное =====
+
+
+match args.command:
+    case 'compile':
+        # пути и их проверки
+        file_path = Path(args.input)
+        if not file_path.is_absolute():
+            file_path = Path.cwd() / file_path
+
+        if not file_path.exists():
+            raise FileNotFoundError(f'Файла по пути {file_path.as_posix()} нет')
+        elif file_path.suffix != '.mylang':
+            raise ValueError(f'Файл {file_path.as_posix()} должен иметь расширение .mylang')
+
+        result_path = Path(args.output)
+        if not result_path.is_absolute():
+            result_path = Path.cwd() / result_path
+
+        if result_path.exists() and not result_path.is_dir():
+            raise ValueError(f'Выходной путь {result_path.as_posix()} должен быть директорией')
+
+        # сама компиляция
+        try:
+            the_module = make_modules(file_path)
+        except OurSyntaxError as err:
+            print_error_location(err.position)
+            print(err)
+        except SemanticError as err:
+            print_error_location(err.position)
+            print(err)
+            # raise err
+        else:
+            if result_path.exists():
+                shutil.rmtree(result_path)
+            transfer_to_c(the_module, result_path)
+
+    case 'retransfer_std_modules':
+        ...
+    case _:
+        raise ValueError('Неправельные команды')
+
+
+
 
 
 
@@ -85,78 +145,3 @@ else:
 
 
 
-
-
-
-
-
-
-
-
-# with open(path_in, 'r') as f:
-#     tokens = tokenize_file(f)
-#     raw_code = collapse_raw(tokens)
-#     code = process_raw(raw_code)
-#     scope = analyze(code)
-#     transform(code, scope)
-#
-#     # print_all(code, scope)
-#     with open(path_out, 'w') as fw:
-#         transfer_to_c(fw, code, scope)
-
-
-# if __name__ == '__main__':
-#     args = sys.argv[1:]
-#     if len(args) == 3:
-#         PRINT = True if args[0] == '1' else False
-#         file_name = args[1]
-#         compile = True if args[2] == '1' else False
-#
-#     path_in = os.path.join(path, f'{file_name}.txt')
-#     path_out = os.path.join(path, f'{file_name}.c')
-#     path_exe = os.path.join(path, f'{file_name}.exe')
-#
-#     with open(path_in, 'r') as f:
-#         tokens = tokenize_file(f)
-#
-#     if PRINT:
-#         print(s)
-#         for t in tokens:
-#             print(t, end=', ') # print(f'{t}-{t.origin}', end=', ')
-#         print()
-#         print(s)
-#     raw_block = collapse_raw(tokens)
-#     if PRINT:
-#         for i in raw_block.block_parts:
-#             print(i)
-#         print(s)
-#     block = process_raw(raw_block)
-#     if PRINT:
-#         for i in block.block_parts:
-#             print(i)
-#         print(s)
-#         # print_all(block)
-#     scope = analyze(block)
-#     if PRINT:
-#         for i in block.block_parts:
-#             print(i)
-#         print(s)
-#         print_all(block, scope)
-#     with open(path_out, 'w') as f:
-#         transfer_to_c(f, block, scope)
-#     if PRINT:
-#         with open(path_out, 'r') as f:
-#             print(f.read())
-#         print(s)
-#         # print_all(block, scope)
-#
-#     if compile:
-#         subprocess.run(['gcc', path_out, '-o', path_exe])
-#
-#
-#     # save_as_svg(block, scope)
-
-
-
-# TODO:
-# нужно будет создать свой printf, что будет работать с нашими спецификаторами, и что важнее, не требовать нуль-терминатора.
