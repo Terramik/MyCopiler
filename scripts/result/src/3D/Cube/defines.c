@@ -8,7 +8,7 @@ double POV_SIZE_Y;
 double POV_SIZE_X;
 double POV_EYE_DIST;
 double POV_DIST;
-void vars_initializer_4871d5decdf6443bb85a3ccd5a6da81a(){(POV_DIST)=((double)(-(3)));
+void vars_initializer_5936befa754740caab71c8a106e64a1e(){(POV_DIST)=((double)(-(3)));
 (POV_EYE_DIST)=((double)(1));
 (POV_SIZE_X)=(1.1);
 (POV_SIZE_Y)=(1.1);

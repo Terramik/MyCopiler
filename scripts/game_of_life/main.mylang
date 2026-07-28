@@ -17,14 +17,14 @@ def print_field(field_status bool_s2) {
         x = 0;
         while x < SIZE_X {
             if field_status[y][x] {
-                print_c("%c", CELL_ALIVE);
+                stdout.putc(CELL_ALIVE);
             } else {
-                print_c("%c", CELL_DEAD);
+                stdout.putc(CELL_DEAD);
             }
             x = x + 1;
         }
         y = y + 1;
-        print_s("\n");
+        stdout.putc('\n');
     }
 }
 
@@ -127,7 +127,7 @@ def main() -> (int64) {
         last_time = now();
 
         update_field(field_status, field_count);
-        std.puts("\033[H\033[J");
+        stdout.puts("\033[H\033[J");
         print_field(field_status);
 
         dt = dt_need - (now() - last_time);
