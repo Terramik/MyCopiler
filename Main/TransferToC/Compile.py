@@ -25,7 +25,7 @@ class ItModule(IteratorModule):
         super().on_module(module)
 
 
-def compile_(modules: list[Module], result_path: Path, compiler: str):
+def compile_(modules: list[Module], for_c_path: Path, result_path: Path, compiler: str):
     """
     Компилирует штуку
     """
@@ -35,10 +35,10 @@ def compile_(modules: list[Module], result_path: Path, compiler: str):
     result = subprocess.run(
         [
             compiler, f'-I{get_path_to_std_header()}', '-O2',
-            (result_path / 'src/main.c').as_posix(), get_path_to_std_lib(),
+            (for_c_path / 'src/main.c').as_posix(), get_path_to_std_lib(),
             *(p for p in it_module.all_paths),
             '-o',
-            (result_path / 'program').as_posix(),
+            result_path.as_posix(),
             '-mconsole'
         ], capture_output=True, text=True
     )

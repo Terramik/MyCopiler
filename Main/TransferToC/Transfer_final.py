@@ -1,4 +1,5 @@
 from typing import TextIO
+import shutil
 from .Types import *
 from .Transforms import *
 from .Transfer import *
@@ -14,6 +15,9 @@ from .Simple import *
 
 
 __all__ = ('transfer',)
+
+
+for_c_path = Path(__file__).parent / 'ForC'
 
 
 class CaclPaths(IteratorModule):
@@ -53,6 +57,7 @@ def transfer(module: Module | list[Module], result_path: Path, compiler: str):
     if isinstance(module, Module):
         module = [module]
 
+    shutil.rmtree(for_c_path)
     done_types, done_slices, data = load_std_data()
 
     # собираем все штуки и исключаем те, что уже есть
@@ -66,7 +71,7 @@ def transfer(module: Module | list[Module], result_path: Path, compiler: str):
     rename_and_collect(module, data)
 
     # делаем базовую штуку для всего проекта
-    base_path = result_path / 'include/project_base.h'
+    base_path = for_c_path / 'include/project_base.h'
     base_path.parent.mkdir(exist_ok=True, parents=True)
     with open(base_path, 'w') as f:
         i = abs(hash(module[0].transfer_path))
@@ -85,7 +90,7 @@ def transfer(module: Module | list[Module], result_path: Path, compiler: str):
 ''')
 
     # получаем относительные пути для трансляции
-    set_paths(module, result_path)
+    set_paths(module, for_c_path)
 
     # обрабатываем модули
     connect_imports(module, data)
@@ -94,11 +99,11 @@ def transfer(module: Module | list[Module], result_path: Path, compiler: str):
     turn_all_enums_to_constants(module, data)
 
     # транслируем
-    transfer_modules(module, result_path, data)
+    transfer_modules(module, for_c_path, data)
 
     # и теперь main
-    make_main(module, result_path)
+    make_main(module, for_c_path)
     # и всё
-    compile_(module, result_path, compiler)
+    compile_(module, for_c_path, result_path, compiler)
 
 

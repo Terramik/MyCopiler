@@ -4,7 +4,6 @@ from pathlib import Path
 from ..Definitions.Exceptions import *
 from .Errors import print_error_location
 from .Settings import settings_load
-import shutil
 import argparse
 import sys
 
@@ -75,8 +74,8 @@ match args.command:
         if not result_path.is_absolute():
             result_path = Path.cwd() / result_path
 
-        if result_path.exists() and not result_path.is_dir():
-            raise ValueError(f'Выходной путь {result_path.as_posix()} должен быть директорией')
+        if result_path.suffix != '':
+            raise ValueError(f'Выходной путь {result_path.as_posix()} не должен иметь расширения')
 
         # сама компиляция
         try:
@@ -89,8 +88,6 @@ match args.command:
             print(err)
             # raise err
         else:
-            if result_path.exists():
-                shutil.rmtree(result_path)
             transfer_to_c(the_module, result_path, args.compiler)
 
     case 'retransfer_std_modules':
