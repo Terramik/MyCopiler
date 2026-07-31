@@ -13,7 +13,7 @@ class MatrixLib {
 
     alias Matrix float64[,];
 
-    def print(mtr Matrix, stream IOStream) {
+    def prints(mtr Matrix, stream IOStream) {
         var row uint64 = lenof mtr; var col uint64 = lenof (mtr[0]);
         var rowi uint64 = 0; var coli uint64 = 0;
         var row_slice float64[];
@@ -41,6 +41,34 @@ class MatrixLib {
 
             rowi = rowi + 1;
         }
+    }
+
+    def print(mtr Matrix) {
+        MatrixLib.prints(mtr, stdout);
+    }
+
+    def eq(mtr1 Matrix, mtr2 Matrix) -> (bool) {
+        if (lenof mtr1 != lenof mtr2) or (lenof (mtr1[0]) != lenof (mtr2[0])) {
+            return false;
+        }
+        
+        var rows uint64 = lenof mtr1; var cols uint64 = lenof (mtr1[0]);
+
+        var rowi uint64 = 0; 
+        while rowi < rows {
+            var mtr1r float64[] = mtr1[rowi]; var mtr2r float64[] = mtr2[rowi];
+
+            var coli uint64 = 0;
+            while coli < cols {
+                if mtr1r[coli] - mtr2r[coli] > 1e-6 {
+                    return false;
+                }
+                coli = coli + 1;
+            }
+            rowi = rowi + 1;
+        }
+
+        return true;
     }
 
     def add(mtr1 Matrix, mtr2 Matrix, mtrr Matrix) {
@@ -344,20 +372,20 @@ class MatrixLib {
 
             if pivot_indx != coli {
                 MatrixLib._gauss_move(mtr, pivot_indx, coli, coli);
-                MatrixLib._gauss_move(mtrr, pivot_indx, coli, coli);
+                MatrixLib._gauss_move(mtrr, pivot_indx, coli, 0);
             }
 
             if pivot_val > 1e-6 {
                 var pivot_inv float64 = 1 / mtr[coli, coli];
                 MatrixLib._gauss_scale(mtr, coli, pivot_inv, coli);
-                MatrixLib._gauss_scale(mtrr, coli, pivot_inv, coli);
+                MatrixLib._gauss_scale(mtrr, coli, pivot_inv, 0);
 
                 rowi = 0;
                 while rowi < N {
                     if rowi == coli {rowi = rowi + 1; continue;}
                     var scale float64 = -mtr[rowi, coli];
                     MatrixLib._gauss_add_to_scale(mtr, coli, rowi, scale, coli);
-                    MatrixLib._gauss_add_to_scale(mtrr, coli, rowi, scale, coli);
+                    MatrixLib._gauss_add_to_scale(mtrr, coli, rowi, scale, 0);
                     rowi = rowi + 1;
                 }
             } else {

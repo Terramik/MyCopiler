@@ -68,6 +68,7 @@ def analyze_mass_assignment(scope: Scope, mass: ControlMassAssignment):
     types_right: [Type | list[Type]] = []
     power_right = 0
     for r in mass.right:
+        analyze_rvalue(r, scope, mass)
         if isinstance(r, TokenOperatorFunctionCall):
             func = r.res_type.simple
             res_num = len(func.results)
@@ -79,7 +80,7 @@ def analyze_mass_assignment(scope: Scope, mass: ControlMassAssignment):
             power_right += res_num
             types_right.append(func.results)
         else:
-            types_right.append(analyze_rvalue(r, scope, mass))
+            types_right.append(r.res_type)
             power_right += 1
 
     if power_left != power_right:
@@ -107,7 +108,7 @@ def analyze_mass_assignment(scope: Scope, mass: ControlMassAssignment):
                                         mass.origin)
             # создадим штуку
             results.append(ControlMassAssignment.Inner(
-                r, [mass.left[cur_left_i]], [None if t_need == t_have else t_need]
+                r, [cur_left_i], [None if t_need == t_have else t_need]
             ))
             cur_left_i += 1
         else:
@@ -115,7 +116,7 @@ def analyze_mass_assignment(scope: Scope, mass: ControlMassAssignment):
             # проверим типы
             num = len(types_have)
             types_need = types_left[cur_left_i:cur_left_i + num]
-            wvalues = mass.left[cur_left_i:cur_left_i + num]
+            wvalues = list(range(cur_left_i, cur_left_i + num))
             types_inner = []
             for ii, h, n, in (
                 ((i, types_have[i], types_need[i]) for i in range(num))

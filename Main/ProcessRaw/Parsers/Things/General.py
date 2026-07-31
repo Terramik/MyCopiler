@@ -46,6 +46,7 @@ def _parse_general(data: list[PreprocessResults], operands: OperandsStack,
     i = start
     while i < end:
         cur = data[i]
+
         match cur:
             case RawOperator():
                 # то, чем ожидается быть текущий оператор зависит от того, чем был прошлый

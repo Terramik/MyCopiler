@@ -63,7 +63,7 @@ def _(node: ControlReturn, file: TextIO, data: DataContainer):
         };\n')
     else:
         file.write(
-            f'return (struct {data.type_func_to_result_type[node.func.var.type]})'
+            f'return ({data.type_func_to_result_type[node.func.var.type]})'
             '{'
                 f'{
                     ','.join(
@@ -136,7 +136,7 @@ def _(node: ControlMassAssignment, file: TextIO, data: DataContainer):
         if len(p.wvalues) == 1:
             # одно - просто присваиваем
             file.write(
-                f'{transfer_expression(p.wvalues[0], data)}' 
+                f'{transfer_expression(node.left[p.wvalues[0]], data)}' 
                 '='
                 # каст если надо
                 f'{
@@ -153,7 +153,7 @@ def _(node: ControlMassAssignment, file: TextIO, data: DataContainer):
         else:
             # много - распаковываем
             for ii, w, t in (
-                (i, p.wvalues[i], p.t_need[i]) for i in range(len(p.wvalues))
+                (i, node.left[p.wvalues[i]], p.t_need[i]) for i in range(len(p.wvalues))
             ):
                 file.write(
                     f'{transfer_expression(w, data)}'

@@ -22,7 +22,7 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
 
 @pytest.mark.parametrize('s, expected_block, expected_scope', [
     # 1. Простая функция с объявлением и присваиванием
-    (
+    pytest.param(
             '''
             def main() -> (int32) 
             {
@@ -79,10 +79,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'a'},
                     )
                 ]
-            )
+            ),
+            id='1'
     ),
     # 2. Функция с параметрами и возвратом нескольких значений
-    (
+    pytest.param(
             '''
             def main(x int32, y int32) -> (int32, int32)
             {
@@ -147,10 +148,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'x', 'y', 'sum', 'diff'},
                     )
                 ]
-            )
+            ),
+            id='2'
     ),
     # 3. Массовое присваивание
-    (
+    pytest.param(
             '''
             def main() -> ()
             {
@@ -225,10 +227,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'a', 'b', 'c'},
                     )
                 ]
-            )
+            ),
+            id='3'
     ),
     # 4. Вызов функции из другой функции
-    (
+    pytest.param(
             '''
             def inc(a int32) -> (int32)
             {
@@ -309,10 +312,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         Scope.Types.Function,
                     )
                 ]
-            )
+            ),
+            id='4'
     ),
     # 5. Приведение типа
-    (
+    pytest.param(
             '''
             def main() -> (float64)
             {
@@ -377,10 +381,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'a', 'b'},
                     )
                 ]
-            )
+            ),
+            id='5'
     ),
     # 6. Простой цикл while
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -480,10 +485,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         ]
                     )
                 ]
-            )
+            ),
+            id='6'
     ),
     # 7. Цикл с break и continue
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -634,10 +640,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         ]
                     )
                 ]
-            )
+            ),
+            id='7'
     ),
     # 8. if-elif-else с bool условиями
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -749,10 +756,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         ]
                     )
                 ]
-            )
+            ),
+            id='8'
     ),
     # 9. Вложенные циклы и вложенные if (проверка областей видимости)
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -925,10 +933,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         ]
                     )
                 ]
-            )
+            ),
+            id='9'
     ),
     # 10. Создание массива на месте, присваивание и индексация
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -988,10 +997,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'arr'},
                     )
                 ]
-            )
+            ),
+            id='10'
     ),
     # 11. Индексация с записью в элемент массива
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1066,10 +1076,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'arr'},
                     )
                 ]
-            )
+            ),
+            id='11'
     ),
     # 12. Указатели: взятие адреса и разыменование
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1134,10 +1145,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'x', 'ptr', 'y'},
                     )
                 ]
-            )
+            ),
+            id='12'
     ),
     # 13. Оператор среза на массиве
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1217,10 +1229,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         {'arr', 'slice'},
                     )
                 ]
-            )
+            ),
+            id='13'
     ),
     # 14. lenof для массива и среза
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1321,10 +1334,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'arr', 'len_arr', 'slice', 'len_slice'},
                     )
                 ]
-            )
+            ),
+            id='14'
     ),
     # 15. sizeof типа
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1402,10 +1416,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'s1', 's2', 's3'},
                     )
                 ]
-            )
+            ),
+            id='15'
     ),
     # 16. Массив указателей и доступ к элементу
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1500,10 +1515,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'a', 'b', 'ptrs', 'val'},
                     )
                 ]
-            )
+            ),
+            id='16'
     ),
     # 17. Явное приведение указателей
-    (
+    pytest.param(
             '''
             def main() -> (int8)
             {
@@ -1575,10 +1591,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'x', 'ptr', 'byte_ptr'},
                     )
                 ]
-            )
+            ),
+            id='18'
     ),
     # 18. Неявный срез arr[:] – начало и размерности не указаны
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1660,10 +1677,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'arr', 'slice'},
                     )
                 ]
-            )
+            ),
+            id='19'
     ),
     # 19. Многомерный массив (2x3) и индексация
-    (
+    pytest.param(
             '''
             def main() -> (int64)
             {
@@ -1746,10 +1764,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         variables={'matrix'},
                     )
                 ]
-            )
+            ),
+            id='20'
     ),
     # 20. псевдоним и переопределение
-    (
+    pytest.param(
             '''
             alias vector (float64[]);
             alias matrix (float64[,]);
@@ -1816,10 +1835,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                         ]
                     )
                 ]
-            )
+            ),
+            id='21'
     ),
     # 21. класс и тип его элемента
-    (
+    pytest.param(
         '''
         class MyClass {
             {}
@@ -1846,10 +1866,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     Scope.Types.Class
                 )
             ]
-        )
+        ),
+        id='22'
     ),
     # 22. класс с полями экзепляра и обращениями к ним
-    (
+    pytest.param(
         '''
         class MyClass {
             {
@@ -1916,10 +1937,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     variables={'obj'}
                 )
             ]
-        )
+        ),
+        id='23'
     ),
     # 23. класс с полями экзепляра и обращениями к ним через указатель
-    (
+    pytest.param(
         '''
         class MyClass {
             {
@@ -1997,10 +2019,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     variables={'obj', 'obj_'}
                 )
             ]
-        )
+        ),
+        id='23'
     ),
     # 24. теперь поля класса
-    (
+    pytest.param(
         '''
         class MyClass {
             {}
@@ -2072,10 +2095,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='24'
     ),
     # 25. вложенные типы из класса
-    (
+    pytest.param(
         '''
         class MyClass {
             {}
@@ -2128,10 +2152,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='25'
     ),
     # 26. __init__
-    (
+    pytest.param(
         '''
         class MyClass2 {
             {
@@ -2210,10 +2235,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='26'
     ),
     # 27. __add__ и его использование
-    (
+    pytest.param(
         '''
         class addsup {
             {a int64;}
@@ -2359,10 +2385,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='27'
     ),
     # 28. __eq__ и его использование
-    (
+    pytest.param(
         '''
         class EqClass {
             {a int64;}
@@ -2492,10 +2519,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='28'
     ),
     # 29. __bool__ и его использование (as bool) и явное преобразование в cls.__bool__(...)
-    (
+    pytest.param(
         '''
         class BoolClass {
             {a int64;}
@@ -2637,10 +2665,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='29'
     ),
     # 30. явная и не явная передача обычного экзепляра в метод
-    (
+    pytest.param(
         '''
         class Check {
             {a int64;}
@@ -2714,11 +2743,12 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='30'
     ),
     # 31. передача в метод, что требует указателя, и использования __init__ без определения(пустой инит),
     # замена обращения к полю классе через экзепляр на прямой доступ
-    (
+    pytest.param(
         '''
         class Check {
             {a int64;}
@@ -2819,10 +2849,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     ]
                 )
             ]
-        )
+        ),
+        id='31'
     ),
     # 32. тест неявного удаления при выходе из блоков кода
-    (
+    pytest.param(
         '''
         class impdel {
             {a int64;}
@@ -2965,10 +2996,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     variables={'clean_', 'clean_2', 'obj', 'obj2', 'nonclean_'}
                 )
             ]
-        )
+        ),
+        id='32'
     ),
     # 33. тест удаления временных не сохранённых объектов
-    (
+    pytest.param(
         '''
         class tempdel {
             {a int64;}
@@ -3226,10 +3258,11 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
                     Scope.Types.Cycle
                 )
             ]
-        )
+        ),
+        id='33'
     ),
     # 34. перечисления, само, и его типы, и обращение к полю
-    (
+    pytest.param(
         '''
         enum Errors {
             MemoryNotFound;
@@ -3288,7 +3321,8 @@ def CLS1_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS1.elem(id
             Scope.Types.Global,
             variables={'err_state'},
             enums={'Errors'}
-        )
+        ),
+        id='34'
     )
 ])
 def test_1(s, expected_block, expected_scope):

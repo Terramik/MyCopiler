@@ -17,8 +17,8 @@ def CLS_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS.elem(id_)
 
 
 @pytest.mark.parametrize('main_path, data, expected_module', [
-    # простейший тест с импортом псевдонима
-    (
+    # 1. простейший тест с импортом псевдонима
+    pytest.param(
         'the_dir/main.mylang',
         {
             'the_dir/main.mylang': '''
@@ -89,10 +89,11 @@ def CLS_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS.elem(id_)
                     ], []
                 ),
             ],
-        )
+        ),
+        id='1'
     ),
-    # алиасы для импортов и экспортов
-    (
+    # 2. алиасы для импортов и экспортов
+    pytest.param(
         'dir/main/main.mylang',
         {
             'dir/main/main.mylang': '''
@@ -168,10 +169,11 @@ def CLS_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS.elem(id_)
                     ], []
                 ),
             ],
-        )
+        ),
+        id='2'
     ),
-    # импорт из стандартной библиотеки
-    (
+    # 3. импорт из стандартной библиотеки
+    pytest.param(
         'dir/blop.mylang',
         {
             'dir/blop.mylang': '''
@@ -229,10 +231,11 @@ def CLS_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS.elem(id_)
             [
                 CheckModule.std(std.io)
             ],
-        )
+        ),
+        id='3'
     ),
-    # импорт и экспорт всего
-    (
+    # 4. импорт и экспорт всего
+    pytest.param(
         'blob/a.mylang',
         {
             'blob/a.mylang': '''
@@ -337,10 +340,11 @@ def CLS_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS.elem(id_)
                     []
                 )
             ],
-        )
+        ),
+        id='4'
     ),
-    # импорт модуля
-    (
+    # 5. импорт модуля
+    pytest.param(
         'blob/main.mylang',
         {
             'blob/main.mylang': '''
@@ -445,7 +449,8 @@ def CLS_itself(id_: int) -> CheckType: return CheckTypeClassItself(CLS.elem(id_)
                     []
                 )
             ]
-        )
+        ),
+        id='5'
     )
 ])
 def test(tmp_path: Path, main_path, data: dict[str, str], expected_module: CheckModule):

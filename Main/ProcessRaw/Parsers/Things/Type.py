@@ -9,51 +9,23 @@ from .....Definitions.Tokens import *
 __all__ = ('_parse_type',)
 
 
-def parse_func(data: list[PreprocessResults], start: int, end: int):
-    pass
-
 def parse_types_list(data: list[PreprocessResults], start: int, end: int) -> tuple[int, list[Type]]:
     """Обходит конструкцию вида "(<тип>, <тип>, ...)" и выдаёт все найденные типы"""
     assert isinstance(data[start], BracketOpen)
     results = []
     i = start + 1
-    last_separator = start
-    depth = 0
-    while i < end:
-        cur = data[i]
-        match cur:
-            case BracketOpen() | SquareBracketOpen():
-                depth += 1
-            case BracketClose():
-                if depth == 0:
-                    break
-                depth -= 1
-            case SquareBracketClose():
-                if depth == 0:
-                    raise OurSyntaxError('Неоткрытая скобка', cur.origin)
-                else:
-                    depth -= 1
-            case Separator():
-                if last_separator + 1 == i:
-                    raise OurSyntaxError('Пустой аргумент типа',
-                                         data[last_separator].origin + cur.origin)
-                i_end, _type = Definitions.parse_type(data, last_separator + 1, i)
-                # если это не совпадает, значит в [last_separator + 1; i] был не только
-                # полноценный тип, но и ещё что-то, и это ошибка.
-                if i_end + 1 != i:
-                    raise OurSyntaxError('Нераспознанные токены в типе',
-                                         data[i_end + 1].origin + cur.origin)
-                results.append(_type)
-        i += 1
-    else:
-        raise OurSyntaxError('Незакрытая скобка', data[start].origin)
 
-    if last_separator + 1 != i:
-        i_end, _type = Definitions.parse_type(data, last_separator + 1, i)
-        if i_end + 1 != i:
-            raise OurSyntaxError('Нераспознанные токены в типе',
-                                 data[i_end + 1].origin + data[i].origin)
-        results.append(_type)
+    while True:
+        i, type = Definitions.parse_type(data, i, end)
+        results.append(type)
+        i += 1
+        match data[i]:
+            case BracketClose():
+                break
+            case Separator():
+                i += 1
+            case _:
+                raise OurSyntaxError('Неожиданный токен в ряде типов, ожидалось ")" или ","', data[i].origin)
 
     return i, results
 
@@ -102,6 +74,7 @@ def _parse_type(data: list[PreprocessResults], start: int, end: int) -> tuple[in
             i_end, results = parse_types_list(data, ii, end)
             # всё
             simple = Type.SimpleTypeFunc(arguments, results)
+            i = i_end
         # простой тип
         else:
             # получаем всякие вложенные имена
@@ -185,6 +158,7 @@ def _parse_type(data: list[PreprocessResults], start: int, end: int) -> tuple[in
     # если обработка завершилась неожиданно
     if depth != 0:
         raise OurSyntaxError('Неожиданный токен, ожидались модификаторы типа', cur.origin)
+
     return i-1, Type(simple, modifiers, data[start].origin + data[i-1].origin)
 
 

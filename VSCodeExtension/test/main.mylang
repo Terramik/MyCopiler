@@ -1,0 +1,19 @@
+from std/io import print_s;
+
+# blob
+
+def main() -> (int64) {
+    print_s("Hello,\000 World!\n");
+
+    var x int64 = 42
+    var y float32 = 3.14
+    var flag bool = true
+    if x > 10 and not flag {
+        print_s("Hello, World!")
+    }
+
+    return 0;
+}
+
+
+

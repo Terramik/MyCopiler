@@ -1,0 +1,207 @@
+from ../defines import all;
+from std/mem import alloc, free, NULL;
+
+
+def project_vertexes(vertexes float64[,], vertexesP float64[,], rotation float64[,]) {
+    var n uint64 = lenof vertexes;
+
+    var i uint64 = 0;
+    while i < n {
+        var vertex float64[4];
+        MatrixLib.apply(rotation, vertexes[i], vertex[:]);
+
+        # перспективно проекцируем в 4д в 3д
+        var vertex_3d float64[3];
+        var hyper_scale float64 = POV_HYPER_EYE_DIST / (vertex[3] - POV_HYPER_DIST + POV_EYE_DIST);
+        vertex_3d = [
+            vertex[0] * hyper_scale;
+            vertex[1] * hyper_scale;
+            vertex[2] * hyper_scale;
+        ];
+
+        # и 3д в 2д, и сохраняем расстояние
+        var dist float64 = vertex_3d[2] - POV_DIST;
+        var scale float64 = POV_EYE_DIST / (dist + POV_EYE_DIST);
+
+        var pvertex float64[] = pvertexes[i];
+        pvertex[0] = (vertex_3d[0] * scale) / POV_SIZE_X * CAM_SIZE_X + CAM_SIZE_X / 2.0;
+        pvertex[1] = -(vertex_3d[2] * scale) / POV_SIZE_Y * CAM_SIZE_Y + CAM_SIZE_Y / 2.0;
+        pvertex[2] = 1 / dist;
+        
+        i = i + 1;
+    }
+
+}
+
+class Line {
+    {
+        p1 uint64;
+        p2 uint64;
+    }
+
+    def __init__(self Line, p1 uint64, p2 uint64) -> (Line) {
+        self.p1 = p1; self.p2 = p2;
+        return self;
+    }
+}
+
+
+class Canvas {
+    {
+        buffer uint8[,];
+        dist_buffer float64[,];
+    }
+
+    def __init__(self Canvas) -> (Canvas) {
+        self->buffer = 0 as uint8[,];
+        self->dist_buffer = 0 as float64[,];
+        return self;
+    }
+
+    def init(self Canvas*) -> (bool) {
+        var allocated0 int8* = alloc(CAM_SIZE_X * CAM_SIZE_Y * sizeof float64);
+        if allocated0 == NULL {
+            return false;
+        }
+        var allocated1 int8* = alloc((CAM_SIZE_X + 1) * CAM_SIZE_Y * sizeof uint8);
+        if allocated1 == NULL {
+            free(allocated0)
+            return false;
+        }
+
+        self->dist_buffer = (allocated0 as float64*)[0:CAM_SIZE_X, CAM_SIZE_Y];
+        self->buffer = (allocated1 as uint8*)[0:CAM_SIZE_X + 1, CAM_SIZE_Y];
+
+        # заполним концы линий '\n'
+        var y uint64 = 0;
+        while y < CAM_SIZE_Y {
+            self.buffer[y, CAM_SIZE_X] = '\n';
+            y = y + 1;
+        }
+        return true;
+    }
+
+    def __del__(self canvas) {
+        if self.buffer != 0 {
+            free(self.buffer as int8*);
+            free(self.dist_buffer as int8*);
+        }
+    }
+
+    
+    def clean(self Canvas*) {
+        var yi int64 = 0; 
+
+        while yi < CAM_SIZE_Y {
+            var buffer_row uint8[] = self.buffer[yi];
+            var dist_buffer_row float64[] = self.dist_buffer[yi];
+
+            var xi int64 = 0;
+            while xi < CAM_SIZE_X {
+                (buffer_row[xi]).symbol = ' ';
+                (dist_buffer_row[xi]).dist = 1e9;
+                xi = xi + 1;
+            }
+            yi = yi + 1;
+        }
+    }
+
+    def print(self Canvas*) {
+        stdout.puts(
+            canvas.buffer[:(CAM_SIZE_X + 1) * CAM_SIZE_Y]
+        );
+    }
+}
+
+class LineP {
+    {
+        origin Line*;
+    }
+
+    def __init__(self LineP, origin Line*) -> (LineP) {
+        self.origin = origin;
+        return self;
+    }
+
+    def print(self LineP*, canvas Canvas*) {
+        var dist_equation float64[3];
+        {
+            var mtr float64[3][3] = [
+                
+            ]
+        }
+
+
+        # i hope, there is no lines outside of a screen
+        var x0 uint64 = round(x0d);
+        var y0 uint64 = round(y0d);
+        var x1 uint64 = round(x1d);
+        var y1 uint64 = round(y1d);
+            
+        var x uint64 = x0
+        var y uint64 = y0
+        var dx int64;
+        var dy int64;
+        var sx int64;
+        var sy int64;
+        if x0 > x1 { dx = x0 - x1; sx = -1; } else { dx = x1 - x0; sx = 1; }
+        if y0 > y1 { dy = y0 - y1; sy = -1; } else { yx = y1 - y0; sy = 1; }
+        
+        var err int64 = dx - dy;
+
+        
+        while (true) {
+            set_pixel(x, y);
+
+            if (x == x1 and y == y1)
+                break;
+
+            var e2 int64 = 2 * err;
+            if (e2 > -dy) {
+                err = err - dy;
+                x = x + sx;
+            }
+            if (e2 < dx) {
+                err = err + dx;
+                y = y + sy;
+            }
+        }
+
+    }
+}
+
+
+def main() -> (int64) {
+    # наш тессеракт
+    var vertexes = float64[4][16] = [
+        [-1, -1, -1, -1], [ 1, -1, -1, -1], [-1,  1, -1, -1], [ 1,  1, -1, -1],
+        [-1, -1,  1, -1], [ 1, -1,  1, -1], [-1,  1,  1, -1], [ 1,  1,  1, -1],
+        [-1, -1, -1,  1], [ 1, -1, -1,  1], [-1,  1, -1,  1], [ 1,  1, -1,  1],
+        [-1, -1,  1,  1], [ 1, -1,  1,  1], [-1,  1,  1,  1], [ 1,  1,  1,  1.0]
+    ];
+
+    var lines Line[32] = [
+        Line(0, 1), Line(2, 3), Line(4, 5), Line(6, 7),
+        Line(8, 9), Line(10, 11), Line(12, 13), Line(14, 15),
+        Line(0, 2), Line(1, 3), Line(4, 6), Line(5, 7),
+        Line(8, 10), Line(9, 11), Line(12, 14), Line(13, 15),
+        Line(0, 4), Line(1, 5), Line(2, 6), Line(3, 7),
+        Line(8, 12), Line(9, 13), Line(10, 14), Line(11, 15),
+        Line(0, 8), Line(1, 9), Line(2, 10), Line(3, 11),
+        Line(4, 12), Line(5, 13), Line(6, 14), Line(7, 15)
+    ]
+
+    var rotation float64[4][4] = [[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,1.0]];
+    var vertexesP float64[3][16];
+    var linesP LineP[32];
+
+    #while true {
+        project_vertexes(vertexes[:], pvertexes[:], rotation[:]);
+
+    #}
+
+    MatrixLib.print(vertexes[:]);
+    MatrixLib.print(pvertexes[:]);
+
+    return 0;
+}

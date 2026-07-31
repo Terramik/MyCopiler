@@ -8,19 +8,6 @@ import argparse
 import sys
 
 
-path_to_scripts = (Path(__file__).resolve().parent.parent / 'scripts')
-
-
-# path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts')
-
-
-# m
-file_path = path_to_scripts / r'Better\Math\Matrices.mylang'
-
-
-result_path = path_to_scripts / r'result'
-
-
 # ===== Настройки =====
 
 settings = settings_load()
@@ -127,9 +114,9 @@ match args.command:
 # DONE: встройка специальной штуки в __init__
 # DONE: наполнение структуры класса
 # DONE: обновить трансляцию под новые условия(control if)
-# классы для std
+# DONE: классы для std
 # DONE: прератор деинициализатор
-
+# gcc -IC:\Coding\Python\Two\Test\TheLanguage\test\V6\Main\TransferToC\STDModules\realization\include -O2 C:/Coding/Python/Two/Test/TheLanguage/test/V6/scripts/Better/3D/Cube/result/src/3D/Cube/maind787bc4e0f224d09b7e2a199e2892663.c C:/Coding/Python/Two/Test/TheLanguage/test/V6/scripts/Better/3D/Cube/result/src/3D/Cube/defines.c C:/Coding/Python/Two/Test/TheLanguage/test/V6/scripts/Better/3D/Cube/result/src/Math/Quaternions.c C:/Coding/Python/Two/Test/TheLanguage/test/V6/scripts/Better/3D/Cube/result/src/Math/Matrices.c C:/Coding/Python/Two/Test/TheLanguage/test/V6/scripts/Better/3D/Cube/result/src/main.c C:\Coding\Python\Two\Test\TheLanguage\test\V6\Main\TransferToC\STDModules\realization\src\io_our.c C:\Coding\Python\Two\Test\TheLanguage\test\V6\Main\TransferToC\STDModules\realization\src\testing_our.c C:\Coding\Python\Two\Test\TheLanguage\test\V6\Main\TransferToC\STDModules\realization\src\time_our.c C:\Coding\Python\Two\Test\TheLanguage\test\V6\Main\TransferToC\STDModules\realization\src\math_our.c C:\Coding\Python\Two\Test\TheLanguage\test\V6\Main\TransferToC\STDModules\realization\src\mem_our.c -o progexe -mconsole
 
 # перечисления
 # DONE: сырые и тесты
@@ -140,5 +127,7 @@ match args.command:
 # DONE: трансляция потом
 # перечисления для std
 
-
-
+# DONE: гит
+# DONE: улучшить интерфейс
+# DONE: использовать компилятор си прям тут
+# DONE: пофиксить размерности неявного среза

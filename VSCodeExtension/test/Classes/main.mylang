@@ -1,0 +1,33 @@
+from std/io import print_f;
+
+
+class MyClass {
+    {
+        x float64;
+        y float64;
+    }
+
+    def __init__(self MyClass, x float64, y float64) -> (MyClass) {
+        self.x = x;
+        self.y = y;
+        return self;
+    }
+
+    def __add__(self MyClass, other MyClass) -> (MyClass) {
+        return MyClass(
+            self.x + other.x, self.y + other.y
+        );
+    }
+
+    def print(self MyClass) {
+        print_f("[%12.4f", self.x);
+        print_f(" %12.4f]", self.y);
+    }
+}
+
+def main() -> (int64) {
+    var obj MyClass = MyClass(1,1) + MyClass(-1,2);
+    obj.print();
+    return 0;
+}
+

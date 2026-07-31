@@ -1,0 +1,174 @@
+from ../../Matrices import MatrixLib;
+from std/io import stdout;
+
+
+def test_eq() -> (bool) {
+    {
+        var mtr float64[2][2] = [[1,2], [2,1.5]];
+        if not MatrixLib.eq(mtr[:], mtr[:]) {
+            stdout.puts("eq 1: expected: true:\n");
+            MatrixLib.print(mtr[:]);
+            MatrixLib.print(mtr[:]);
+            return false;
+        }
+    }
+    {
+        var mtr float64[2][3] = [[0,1e3], [-1,3.3], [-3,4]];
+        if not MatrixLib.eq(mtr[:], mtr[:]) {
+            stdout.puts("eq 2: expected: true:\n");
+            MatrixLib.print(mtr[:]);
+            MatrixLib.print(mtr[:]);
+            return false;
+        }
+    }
+    {
+        var mtr float64[1][2] = [[1.1], [2.2]];
+        if MatrixLib.eq(mtr[:1,2], mtr[:2,1]) {
+            stdout.puts("eq 3: expected: false:\n");
+            MatrixLib.print(mtr[:1,2]);
+            MatrixLib.print(mtr[:2,1]);
+            return false;
+        }
+    }
+    return true;
+}
+
+def test_mul() -> (bool) {
+    {
+        var mtr1 float64[2][2] = [[1,0], [0.0,1]];
+        var mtr2 float64[2][2] = [[10, 20], [30, 4.1]];
+        var mtrr float64[2][2] = [[10, 20], [30, 4.1]];
+        var mtrt float64[2][2];
+        MatrixLib.mul(mtr1[:], mtr2[:], mtrt[:])
+        if not MatrixLib.eq(mtrt[:], mtrr[:]) {
+            stdout.puts("mul 1: expected:\n");
+            MatrixLib.print(mtrr[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(mtrr[:]);
+            return false;
+        }
+    }
+    {
+        var A float64[3][2] = [[1.0, 2, 3], [4, 5, 6]];
+        var B float64[2][3] = [[7.0, 8], [9, 10], [11, 12]];
+        var expected float64[2][2] = [[58.0, 64], [139, 154]];
+        var result float64[2][2];
+        MatrixLib.mul(A[:], B[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("mul 2: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    {
+        var A float64[2][3] = [[1.0, 2], [3, 4], [5, 6]];
+        var B float64[3][2] = [[7.0, 8, 9], [10, 11, 12]];
+        var expected float64[3][3] = [[27.0, 30, 33], [61, 68, 75], [95, 106, 117]];
+        var result float64[3][3];
+        MatrixLib.mul(A[:], B[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("mul 3: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    {
+        var A float64[3][1] = [[1.0, 2, 3]];
+        var B float64[1][3] = [[4.0], [5], [6]];
+        var expected float64[1][1] = [[32.0]];
+        var result float64[1][1];
+        MatrixLib.mul(A[:], B[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("mul 4: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    {
+        var A float64[1][3] = [[1.0], [2], [3]];
+        var B float64[3][1] = [[4.0, 5, 6]];
+        var expected float64[3][3] = [[4.0, 5, 6], [8, 10, 12], [12, 15, 18]];
+        var result float64[3][3];
+        MatrixLib.mul(A[:], B[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("mul 5: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    return true;
+}
+
+def test_inv() -> (bool) {
+    {
+        var M float64[2][2] = [[10,0], [0,0.1]];
+        var expected float64[2][2] = [[0.1,0], [0,10]];
+        var result float64[2][2];
+        MatrixLib.inv(M[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("inv 1: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    {
+        var M float64[2][2] = [[4.0, 7], [2, 6]];
+        var expected float64[2][2] = [[0.6, -0.7], [-0.2, 0.4]];
+        var result float64[2][2];
+        MatrixLib.inv(M[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("inv 2: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    {
+        var M float64[3][3] = [[2.0, 0, 0], [0, 3, 0], [0, 0, 4]];
+        var expected float64[3][3] = [[0.5, 0, 0], [0, 0.3333333333333333, 0], [0, 0, 0.25]];
+        var result float64[3][3];
+        MatrixLib.inv(M[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("inv 3: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    {
+        var M float64[3][3] = [[1.0, 2, 3], [0, 1, 4], [0, 0, 1]];
+        var expected float64[3][3] = [[1.0, -2, 5], [0, 1, -4], [0, 0, 1]];
+        var result float64[3][3];
+        MatrixLib.inv(M[:], result[:]);
+        if not MatrixLib.eq(result[:], expected[:]) {
+            stdout.puts("inv 4: expected:\n");
+            MatrixLib.print(expected[:]);
+            stdout.puts("got:\n");
+            MatrixLib.print(result[:]);
+            return false;
+        }
+    }
+    return true;
+}
+
+def main() -> (int64) {
+    if not test_eq() { return 0; }
+    if not test_mul() { return 0; }
+    if not test_inv() { return 0; }
+
+
+
+    return 0;
+}

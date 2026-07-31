@@ -90,7 +90,7 @@ class ControlMassAssignment(ControlABC):
         Штука нужна для того, что понять, сколько каких wvalue нужно на 1 rvalue, и к каким типам нужно преобразовывать
         """
         rvalue: TokenOperatorRvalueABC
-        wvalues: list[TokenOperatorWvalueABC]
+        wvalues: list[int] #list[TokenOperatorWvalueABC]
         t_need: list[Type | None]
 
     def __repr__(self):

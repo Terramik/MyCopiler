@@ -120,8 +120,9 @@ def analyze_fcall(node: TokenOperatorFunctionCall, scope: Scope, parent: TypeExp
                                 'обычного выражения(управляющей конструкции)', node.origin)
     # функции со множественным результатом могут быть только в выражениях и множественных присваиваниях
     if res_num > 1:
-        raise SemanticError('Функции, возвращающие больше 1 значения, могут быть только в начале '
-                            'обычных выражений и массовых присваиваниях', node.origin)
+        if not isinstance(parent, (ControlExpression, ControlMassAssignment)):
+            raise SemanticError('Функции, возвращающие больше 1 значения, могут быть только в начале '
+                                'обычных выражений и массовых присваиваниях', node.origin)
 
     # проверка параметров
     args_num = len(func.arguments)
@@ -358,6 +359,7 @@ def _(node: TokenOperatorSlize, scope: Scope, parent: TypeExpressionParent) -> T
             n = 1
         else:
             n = type_operand.get_dims()
+        # всё просто нули
         node.position_start = [
             TokenOperatorCast(Type(Type.SimpleTypeBase(BaseTypes.uint64), []),
                               TokenLiteral.from_raw(TokenRawLiteral('0', zero_origin)), zero_origin)
@@ -380,20 +382,25 @@ def _(node: TokenOperatorSlize, scope: Scope, parent: TypeExpressionParent) -> T
         else:
             dims = type_operand.get_dims()
             # делаем лесенку из lenof, чтобы скопировать размерности
-            def get_nth_index(n: int, _type: Type):
-                if n == 0:
-                    return node.operand
-                return TokenOperatorIndex(
-                    get_nth_index(n-1, type_operand.without_one_dimension()),
-                    TokenOperatorCast(Type(Type.SimpleTypeBase(BaseTypes.uint64), []),
-                                      TokenLiteral.from_raw(TokenRawLiteral('0', zero_origin)), zero_origin),
-                    zero_origin,
-                    type_operand # тип указываем сами
+
+            result_dimensions = [node.operand]
+            # добавляем n_i = n_{i-1}[0]
+            for _ in range(dims - 1):
+                result_dimensions.append(
+                    TokenOperatorIndex(
+                        result_dimensions[-1],
+                        TokenOperatorCast(Type(Type.SimpleTypeBase(BaseTypes.uint64), []),
+                                          TokenLiteral.from_raw(TokenRawLiteral('0', zero_origin)), zero_origin),
+                        node.origin,
+                        result_dimensions[-1].res_type.without_one_dimension()
+                    )
                 )
-            node.result_dimensions = [
-                TokenOperatorLenof(get_nth_index(n, type_operand.without_one_dimension()), zero_origin, types.int64)
-                for n in range(dims)
+            # и теперь всё в lenof(и в обратном порядке, чтобы lenof thing была последней размерностью, как и должно быть)
+            result_dimensions = [
+                TokenOperatorLenof(t, node.origin, types.int64) for t in result_dimensions[::-1]
             ]
+
+            node.result_dimensions = result_dimensions
 
     # результат
     # срезаем модификатор

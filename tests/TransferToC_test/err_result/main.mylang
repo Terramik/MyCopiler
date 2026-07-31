@@ -1,0 +1,21 @@
+
+            from std/io import stdout;
+        
+            def main() -> (int64) {
+                if true {
+                    stdout.putc('H');
+                } else {
+                    stdout.putc('h');
+                }
+                if false {
+                    stdout.putc('H');
+                } else {
+                    stdout.putc('h');
+                }
+                var i uint64 = 0;
+                while i < 0xffff {
+                    i = i + 1;
+                }
+                stdout.print_u("%1u", 0xffff - i);
+                return 0;
+            }

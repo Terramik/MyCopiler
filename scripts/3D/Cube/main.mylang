@@ -132,9 +132,9 @@ class ProjectedPolygon {
                 to_sort[0], to_sort[1] = to_sort[1], to_sort[0];
             }
             # now, to_sort[0].y max(down), to_sort[2].y min(up)
-            self.y_max = clamp(ceil(to_sort[0][1]), 0, CAM_SIZE_Y + 1);
-            self.y_mid = clamp(ceil(to_sort[1][1]), 0, CAM_SIZE_Y + 1);
-            self.y_min = clamp(floor(to_sort[2][1]), 0, CAM_SIZE_Y + 1);
+            self.y_max = clamp(ceil(to_sort[0][1]), 0, CAM_SIZE_Y - 1);
+            self.y_mid = clamp(ceil(to_sort[1][1]), 0, CAM_SIZE_Y - 1);
+            self.y_min = clamp(floor(to_sort[2][1]), 0, CAM_SIZE_Y - 1);
 
             # now, type and eq cacl
             var calc_max_mid bool = true;
@@ -154,13 +154,13 @@ class ProjectedPolygon {
 
             def calc_thing(p1 float64[2], p2 float64[2], res float64[]) {
                 var mtr float64[2][2] = [
-                    [round(p1[1]), 1], [round(p2[1]), 1]
+                    [p1[1], 1], [p2[1], 1]
                 ];
                 var mtri float64[2][2];
                 MatrixLib.inv(mtr[:], mtri[:]);
 
                 var vec float64[2] = [
-                    round(p1[0]), round(p2[0])
+                    p1[0], p2[0]
                 ];
                 MatrixLib.apply(mtri[:], vec[:], res);
                 #res[1] = res[1] + 0.5;
@@ -214,7 +214,7 @@ class ProjectedPolygon {
                 }
                 # write itself
                 while Xi < X {
-                    var dist float64 = self.dist_equation[0] * Xi + self.dist_equation[1] * Yi + self.dist_equation[2];
+                    var dist float64 = 1 / (self.dist_equation[0] * Xi + self.dist_equation[1] * Yi + self.dist_equation[2]);
                     if dist < (canvas_row[Xi]).dist {
                         (canvas_row[Xi]).dist = dist;
                         (canvas_row[Xi]).symbol = self.symbol;
@@ -237,7 +237,7 @@ class ProjectedPolygon {
                     }
                 }
                 while Xi < X {
-                    var dist float64 = self.dist_equation[0] * Xi + self.dist_equation[1] * Yi + self.dist_equation[2];
+                    var dist float64 = 1 / (self.dist_equation[0] * Xi + self.dist_equation[1] * Yi + self.dist_equation[2]);
                     if dist < (canvas_row[Xi]).dist {
                         (canvas_row[Xi]).dist = dist;
                         (canvas_row[Xi]).symbol = self.symbol;
@@ -291,7 +291,7 @@ def project_vertexes(vertexes float64[,], pvertexes float64[,], q Quaternion) {
 
         pvertex[0] = (tmp[1] * scale) / POV_SIZE_X * CAM_SIZE_X + CAM_SIZE_X / 2.0;
         pvertex[1] = -(tmp[2] * scale) / POV_SIZE_Y * CAM_SIZE_Y + CAM_SIZE_Y / 2.0;
-        pvertex[2] = dist;
+        pvertex[2] = 1 / dist;
 
         i = i + 1;
     }

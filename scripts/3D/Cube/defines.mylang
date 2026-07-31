@@ -6,10 +6,10 @@ from std/math import PI;
 export all;
 
 
-var POV_DIST float64 = -3;
+var POV_DIST float64 = -2;
 var POV_EYE_DIST float64 = 1;
-var POV_SIZE_X float64 = 1.1;
-var POV_SIZE_Y float64 = 1.1;
+var POV_SIZE_X float64 = 1.5;
+var POV_SIZE_Y float64 = 1.5;
 
 var CAM_SIZE_X int64 = 70;
 var CAM_SIZE_Y int64 = 25;

@@ -462,10 +462,11 @@ class CheckControlMassAssignmentInner(CheckNode):
     wvalues: list[CheckWvalueABC]
     t_need: list[CheckType | None]
 
-    def is_match(self, node: ControlMassAssignment.Inner):
+    def is_match(self, node: ControlMassAssignment.Inner, mass: ControlMassAssignment | None = None):
+        assert mass is not None
         assert isinstance(node, ControlMassAssignment.Inner)
         self.rvalue.is_match(node.rvalue)
-        check_list(self.wvalues, node.wvalues)
+        check_list(self.wvalues, [mass.left[i] for i in node.wvalues])
         assert len(self.t_need) == len(node.t_need)
         for tn, hn in zip(self.t_need, node.t_need):
             if tn is None:
@@ -480,11 +481,14 @@ class CheckControlMassAssignment(CheckControlABC):
     right: list[CheckRvalueABC]
     processed: list[CheckControlMassAssignmentInner]
 
+
     def is_match(self, node: ControlMassAssignment):
         assert isinstance(node, ControlMassAssignment)
         check_list(self.left, node.left)
         check_list(self.right, node.right)
-        check_list(self.processed, node.processed)
+        assert len(self.processed) == len(node.processed)
+        for need, have in zip(self.processed, node.processed):
+            need.is_match(have, node)
 
 
 @dataclass(slots=True)
