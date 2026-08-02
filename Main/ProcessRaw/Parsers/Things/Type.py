@@ -156,9 +156,10 @@ def _parse_type(data: list[PreprocessResults], start: int, end: int) -> tuple[in
                 break
         i += 1
     # если обработка завершилась неожиданно
+    i -= 1
     if depth != 0:
         raise OurSyntaxError('Неожиданный токен, ожидались модификаторы типа', cur.origin)
 
-    return i-1, Type(simple, modifiers, data[start].origin + data[i-1].origin)
+    return i, Type(simple, modifiers, data[start].origin + data[i].origin)
 
 

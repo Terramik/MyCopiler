@@ -89,6 +89,6 @@ def collapse_function(data: list[TokenRawABC | ControlRawCodeBlock],
 
     return ControlRawFunctionDefinition(
         f_name.word, params, results, block,
-        data[0].origin + block.origin
+        data[0].origin + data[-1].origin
     )
 

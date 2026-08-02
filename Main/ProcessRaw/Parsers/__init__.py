@@ -41,7 +41,7 @@ def process_type(expr: list[TokenRawABC]) -> Type:
 
 def process_define(expr: list[TokenRawABC]) -> TokenOperatorVariableDefinition:
     """Обрабатывает то, что должно быть объявлением переменной, вставляет первым токеном 'var' """
-    expr.insert(0, TokenRawSymbol(KeyWords.Variable.value, zero_origin))
+    expr.insert(0, TokenRawSymbol(KeyWords.Variable.value, expr[0].origin))
     expr = preprocess(expr)
     _, thing = parse_vardef(expr, [], [], 0, len(expr))
     return thing

@@ -1,0 +1,41 @@
+{
+  "name": "mylang",
+  "displayName": "Mylang",
+  "description": "1+1=3",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "activationEvents": [
+    "onLanguage:mylang"
+  ],
+  "main": "./extension.js",
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mylang",
+        "aliases": [
+          "Mylang",
+          "mylang"
+        ],
+        "extensions": [
+          ".mylang"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars_": [
+      {
+        "language": "mylang",
+        "scopeName": "source.mylang",
+        "path": "./syntaxes/mylang.tmLanguage.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "vscode-languageclient": "^10.1.0"
+  }
+}

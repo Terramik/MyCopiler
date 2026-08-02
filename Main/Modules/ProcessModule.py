@@ -40,7 +40,7 @@ def get_module(path: Path, import_origin: TokenOrigin) -> Module:
         )
 
 
-def process_module(module: Module, processed_modules: dict[Path, Module]):
+def process_module(module: Module, processed_modules: dict[Path, Module], ignore_main: bool = False):
     # стандартные не трогаем
     if module.type == Module.Types.Standard:
         return
@@ -78,7 +78,7 @@ def process_module(module: Module, processed_modules: dict[Path, Module]):
 
     # обрабатываем
     for mod in modules:
-        process_module(mod, processed_modules)
+        process_module(mod, processed_modules, ignore_main)
 
     imported = []
     imported_names = set()
@@ -131,12 +131,12 @@ def process_module(module: Module, processed_modules: dict[Path, Module]):
     module.scope = analyze(module.code, to_add)
 
     # проверка на присутствие точки входа
-    if module.type == Module.Types.Usual and module.scope.find_function_in_cur_scope('main') is not None:
-        raise SemanticError('Точка входа вне основного модуля',
-                            module.scope.find_function_in_cur_scope('main').origin)
-    elif module.type == Module.Types.Main and module.scope.find_function_in_cur_scope('main') is None:
-        raise SemanticError('Точки входа не обнаружено', module.code.origin)
-
+    if not ignore_main:
+        if module.type == Module.Types.Usual and module.scope.find_function_in_cur_scope('main') is not None:
+            raise SemanticError('Точка входа вне основного модуля',
+                                module.scope.find_function_in_cur_scope('main').origin)
+        elif module.type == Module.Types.Main and module.scope.find_function_in_cur_scope('main') is None:
+            raise SemanticError('Точки входа не обнаружено', module.code.origin)
 
 
     # теперь экспорт

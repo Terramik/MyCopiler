@@ -21,7 +21,6 @@ def tokenize_file(file: TextIO, path: Path) -> list[TokenRawABC]:
     tokens = []
     line_i = 0
     for line in file:
-        line_i += 1
         col_i = 0
         while line.strip():
             if PATTERN_COMMENT.match(line) is not None:
@@ -36,4 +35,5 @@ def tokenize_file(file: TextIO, path: Path) -> list[TokenRawABC]:
                     break
             else:
                 raise ReadError('', TextPosition(line_i, col_i))
+        line_i += 1
     return tokens

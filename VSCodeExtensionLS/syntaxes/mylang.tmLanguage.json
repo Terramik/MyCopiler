@@ -1,0 +1,96 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Mylang",
+	"patterns": [
+		{ "include": "#strings" },
+		{ "include": "#chars" },
+		{ "include": "#comments" },
+		{ "include": "#numbers" },
+		{ "include": "#constants" },
+		{ "include": "#keywords" },
+		{ "include": "#operators" },
+		{ "include": "#types" }
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.number-sign.mylang",
+					"match": "#.*$"
+				}
+			]
+		},
+		"strings": {
+			"name": "string.quoted.double.mylang",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.mylang",
+					"match": "(\\\\[0-9]{3}|\\\\(\\\\|n|t|\"))"
+				}
+			]
+		},
+		"chars": {
+			"name": "string.quoted.double.mylang",
+			"match": "'.'"
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "constant.numeric.hex.mylang",
+					"match": "\\b0x[0-9a-fA-F]+\\b"
+				},
+				{
+					"name": "constant.numeric.binary.mylang",
+					"match": "\\b0b[01]+\\b"
+				},
+				{
+					"name": "constant.numeric.float.mylang",
+					"match": "\\b[0-9]+\\.[0-9]+(?:e[+-]?[0-9]+)?\\b"
+				},
+				{
+					"name": "constant.numeric.integer.mylang",
+					"match": "\\b[0-9]+\\b"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [
+				{
+					"name": "constant.language.mylang",
+					"match": "\\b(true|false)\\b"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control.mylang",
+					"match": "\\b(def|var|alias|from|import|export|if|elif|else|while|return|break|class|continue|enum)\\b"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.mylang",
+					"match": "(\\+|-|\\*|/|%|==|!=|<=|>=|<|>|&&|\\|\\||!|~|&|\\||\\^|<<|>>|\\.|->|and|or|not|lenof|sizeof)"
+				},
+				{
+					"name": "keyword.operator.assignment.mylang",
+					"match": "="
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "storage.type.mylang",
+					"match": "\\b(bool|int64|int32|int16|int8|uint64|uint32|uint16|uint8|float64|float32)\\b"
+				}
+			]
+		}
+	},
+	"scopeName": "source.mylang"
+}

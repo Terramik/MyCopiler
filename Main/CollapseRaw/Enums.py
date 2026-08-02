@@ -28,5 +28,5 @@ def collapse_enum(data: list[TokenRawABC],
             raise OurSyntaxError('Неожиданная конструкция', exp.origin)
         states.append(exp.tokens[0].word)
     return ControlRawEnum(
-        name, states, data[0].origin + data[-1].origin
+        name, states, data[0].origin + block.origin
     )

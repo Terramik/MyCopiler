@@ -40,7 +40,6 @@ class Type:
                 return False
             return self.raw_name == other.raw_name and self.indexes == other.indexes
 
-
     @dataclass(slots=True, frozen=True)
     class SimpleTypeBase(SimpleTypeABC):
         type: BaseTypes
@@ -75,7 +74,7 @@ class Type:
         full_type: Type
 
         def __repr__(self):
-            return repr(self.link.name)
+            return self.link.name
 
         def __eq__(self, other):
             if not isinstance(other, Type.SimpleTypeTypedef):

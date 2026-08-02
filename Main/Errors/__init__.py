@@ -16,8 +16,8 @@ def print_error_location(origin: TokenOrigin) -> None:
         print(f"Не удалось прочитать файл {file_path}: {e}", file=sys.stderr)
         return
 
-    start_line = origin.start.line - 1
-    end_line = origin.end.line - 1
+    start_line = origin.start.line
+    end_line = origin.end.line
     if start_line < 0 or end_line < 0 or start_line >= len(lines) or end_line >= len(lines):
         print("Ошибка: указанная позиция выходит за пределы файла", file=sys.stderr)
         return

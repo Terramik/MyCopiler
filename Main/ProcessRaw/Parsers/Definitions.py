@@ -131,11 +131,11 @@ class TreeOperatorBinary(TreeOperatorABC):
             left = self.rvalueize(operands.pop())
             if self.type == TokenOperatorBinaryTypes.FieldAccess:
                 operands.append(TokenOperatorFieldAccess(
-                    left, right.name, self.origin
+                    left, right.name, self.origin + right.origin
                 ))
             else:
                 operands.append(TokenOperatorFieldAccessPointer(
-                    left, right.name, self.origin
+                    left, right.name, self.origin + right.origin
                 ))
 
         else:
@@ -258,6 +258,7 @@ class TreeOperatorCast(TreeOperatorABC):
 @dataclass(slots=True)
 class TreeOperatorIndex(TreeOperatorABC):
     indexes: list[TokenOperatorRvalueABC]
+    origin: TokenOrigin
 
     @property
     def associativity(self) -> Associativity:

@@ -23,7 +23,7 @@ def _parse_vardef(data: list[PreprocessResults], operands: OperandsStack,
     name = name.thing.word
     i, _type = Definitions.parse_type(data, start + 2, end)
     return i, TokenOperatorVariableDefinition(name, _type,
-                                              data[start].origin + data[i].origin)
+                                              data[start].origin + data[start + 1].origin)
 
 
 def _parse_cast(data: list[PreprocessResults], operands: OperandsStack,
@@ -39,7 +39,7 @@ def _parse_sizeof(data: list[PreprocessResults], operands: OperandsStack,
     sizeof = data[start]
     assert isinstance(sizeof, RawOperator) and sizeof.symbol == KeyWords.Sizeof.value
     i, _type = Definitions.parse_type(data, start + 1, end)
-    return i, TokenOperatorSizeof(_type, sizeof.origin + data[i].origin)
+    return i, TokenOperatorSizeof(_type, sizeof.origin)
 
 
 def _parse_array(data: list[PreprocessResults], operands: OperandsStack,
@@ -165,7 +165,7 @@ def _parse_index_or_slice(data: list[PreprocessResults], operands: OperandsStack
     if delimiter_found:
         return i, TreeOperatorSlice(elements1, elements2, data[start].origin + data[i].origin)
     else:
-        return i, TreeOperatorIndex(elements1)
+        return i, TreeOperatorIndex(elements1, data[start].origin + data[i].origin)
 
 
 

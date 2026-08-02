@@ -32,6 +32,51 @@ class TokenOrigin:
     def __repr__(self):
         return f'{self.start}-{self.end}'
 
+    def __contains__(self, item):
+        if not isinstance(item, TextPosition):
+            return False
+        return self.is_in(item)
+
+    def is_before(self, pos: TextPosition):
+        if (
+            self.start.line > pos.line
+        ) or (
+            self.start.line == pos.line and
+            self.start.column > pos.column
+        ):
+            return True
+        return False
+
+    def is_in(self, pos: TextPosition):
+        if (
+            # если штука в строках внутри
+            self.start.line < pos.line < self.end.line
+        ) or (
+            # если штуки в начальной строки
+            self.start.line == pos.line < self.end.line and
+            self.start.column <= pos.column
+        ) or (
+            # если штуки в последней строке
+            self.start.line < pos.line == self.end.line and
+            pos.column <= self.end.column
+        ) or (
+            # если на одной строке
+            self.start.line == pos.line == self.end.line and
+            self.start.column <= pos.column <= self.end.column
+        ):
+            return True
+        return False
+
+    def is_after(self, pos: TextPosition):
+        if (
+            pos.line > self.end.line
+        ) or (
+            pos.line == self.end.line and
+            pos.column > self.start.column
+        ):
+            return True
+        return False
+
 
 zero_origin = TokenOrigin(TextPosition(0, 0), TextPosition(0, 0), Path(''))
 
