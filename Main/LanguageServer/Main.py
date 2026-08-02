@@ -87,6 +87,7 @@ def initialize(ls, params):
                 save=True,
             ),
             definition_provider=True,
+            hover_provider=True
         )
     )
 
@@ -103,48 +104,87 @@ def did_change(ls: OurLanguageServer, params: types.DidChangeTextDocumentParams)
 
 @server.feature(types.TEXT_DOCUMENT_DEFINITION)
 def goto_definition(ls: OurLanguageServer, params: types.DefinitionParams):
-    with (open(p, 'a') as f):
-        path = ls.uri_to_path(params.text_document.uri)
+    path = ls.uri_to_path(params.text_document.uri)
 
-        if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
-            return None
-        mod = ls.processed_modules.get(path)
+    if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
+        return None
+    mod = ls.processed_modules.get(path)
 
-        assert mod is not None
-        assert mod.code is not None
+    tok = position_to_node(
+        mod,
+        ls.pygls_position_to_our_position(params.position)
+    )
 
-        tok = position_to_node(
-            mod,
-            ls.pygls_position_to_our_position(params.position)
-        )
+    if isinstance(tok, TokenVariableAccess):
+        tok = tok.var_def
 
-        print(f'TOK {tok}', file=f)
-        if isinstance(tok, TokenVariableAccess):
-            tok = tok.var_def
+        while True:
+            # если переменная импортирована
+            for imp in mod.import_:
+                if imp.thing is tok:
+                    if imp.from_.is_std: # костыль, т.к. будет сложно сдвинуть их к объявлению в си файле
+                        return None
 
-            while True:
-                # если переменная импортирована
-                for imp in mod.import_:
-                    if imp.thing is tok:
-                        if imp.from_.is_std: # костыль, т.к. будет сложно сдвинуть их к объявлению в си файле
-                            return None
+                    exp = imp.from_.find_export(imp.name)
+                    if isinstance(exp.thing, TokenOperatorVariableDefinition):
+                        tok = imp.thing
+                        continue
+                    else:
+                        return None
+            else:
+                break
 
-                        exp = imp.from_.find_export(imp.name)
-                        if isinstance(exp.thing, TokenOperatorVariableDefinition):
-                            tok = imp.thing
-                            continue
-                        else:
-                            return None
-                else:
-                    break
-
-            print(f'GOTODEF SUCCESS: {tok}', file=f)
-
-            return ls.token_origin_to_pygls_location(tok.origin)
-        elif isinstance(tok, Type):
-            print(f'TYPE {tok}', file=f)
-            if tok.is_simple_typedef:
-                return ls.token_origin_to_pygls_location(tok.simple.link.type.origin)
+        return ls.token_origin_to_pygls_location(tok.origin)
+    elif isinstance(tok, Type):
+        if tok.is_simple_typedef:
+            return ls.token_origin_to_pygls_location(tok.simple.link.type.origin)
     return None
+
+
+def type_to_hover_hint(type: Type) -> str:
+    if type.is_simple_func:
+        return f'func ({
+            ', '.join(map(type_to_hover_hint, type.simple.arguments))
+        }) -> ({
+            ', '.join(map(type_to_hover_hint, type.simple.results))
+        })'
+    elif type.is_simple_typedef:
+        return f'**{type}** aka **{type.full_type}**'
+    return f'**{type}**'
+
+
+@server.feature(types.TEXT_DOCUMENT_HOVER)
+def hover(ls: OurLanguageServer, params: types.HoverParams):
+    # ищём штуку
+    path = ls.uri_to_path(params.text_document.uri)
+
+    if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
+        return None
+    mod = ls.processed_modules.get(path)
+
+    tok = position_to_node(
+        mod,
+        ls.pygls_position_to_our_position(params.position)
+    )
+
+    # и выводим сам тип
+    type: Type | None = None
+    if isinstance(tok, ControlFunctionDefinition):
+        type = tok.var.type
+    elif isinstance(tok, (TokenOperatorRvalueABC, TokenOperatorWvalueABC)):
+        type = tok.res_type
+    elif isinstance(tok, Type):
+        type = tok # зачем тип типу? хз.
+
+    if type is not None:
+        return types.Hover(
+            types.MarkupContent(
+                types.MarkupKind.Markdown,
+                type_to_hover_hint(type)
+            ),
+            ls.token_origin_to_pygls_range(tok.origin)
+        )
+    return None
+
 
 server.start_io()
