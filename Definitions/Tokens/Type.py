@@ -446,4 +446,14 @@ class Type:
                     return Type(Type.SimpleTypeBase(BaseTypes.uint64), [])
 
 
+class ErrorType(Type):
+    """
+    Тип для узла с ошибкой, указывает что он не валиден и что лишних ошибок кидать не надо.
+    """
+    def __init__(self, origin: TokenOrigin | None):
+        self.origin = origin
+
+
+
 t_bool = Type(Type.SimpleTypeBase(BaseTypes.bool), [])
+t_error = ErrorType()

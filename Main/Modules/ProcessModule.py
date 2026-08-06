@@ -6,10 +6,11 @@ from ..CollapseRaw import collapse_raw
 from ..ProcessRaw import process_raw
 from ...Definitions.Enums import KeyWords
 from ...Definitions.STDModules import std_modules
+from ...Definitions.Exceptions import OurSyntaxError, SemanticError
 from ..Analyze import analyze
 
 
-def get_module(path: Path, import_origin: TokenOrigin) -> Module:
+def get_module(path: Path, import_origin: TokenOrigin) -> tuple[Module, list[OurSyntaxError]]:
     """
     Читает модуль по пути, обрабатывает его до стадии обработки сырых конструкций
     """
@@ -31,16 +32,16 @@ def get_module(path: Path, import_origin: TokenOrigin) -> Module:
         # проходим файл до обработки сырых конструкций
         with open(path, 'r', encoding='utf-8') as f:
             raw_tokens = tokenize_file(f, path)
-            raw_code = collapse_raw(raw_tokens)
+            raw_code, err = collapse_raw(raw_tokens)
             code = process_raw(raw_code)
 
         # готово
         return Module(
             Module.Types.Usual, path, code
-        )
+        ), err
 
 
-def process_module(module: Module, processed_modules: dict[Path, Module], ignore_main: bool = False):
+def process_module(module: Module, processed_modules: dict[Path, Module], ignore_main: bool = False) -> list[OurSyntaxError | SemanticError]:
     # стандартные не трогаем
     if module.type == Module.Types.Standard:
         return
@@ -60,6 +61,7 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
     processed: set[Path] = set()
     paths = set()
     modules = []
+    errors = []
     for imp in imports_:
         path = (module.path_to_file / imp.path).with_suffix('.mylang').resolve()
         if path not in paths:
@@ -70,9 +72,9 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
                 modules.append(processed_modules[path])
             else:
                 paths.add(path)
-                modules.append(
-                    get_module(path, imp.origin)
-                )
+                mod, err = get_module(path, imp.origin)
+                modules.append(mod)
+                errors.extend(err)
 
     module.imported_modules = modules
 

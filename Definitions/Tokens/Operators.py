@@ -328,3 +328,14 @@ class TokenOperatorDeInitializer(TokenOperatorRvalueABC):
         return f'{KeyWords.DeInitializer.value} ({self.operand})'
 
 
+@dataclass(slots=True)
+class TokenOperatorError(TokenOperatorRvalueABC, TokenOperatorWvalueABC):
+    """
+    Отображает нод(или их древо), что не были обработаны в ходе обработки выражений в результате ошибки
+    """
+    origin: TokenOrigin
+    res_type: Type = t_error
+
+    def __repr__(self):
+        return 'error_node'
+
