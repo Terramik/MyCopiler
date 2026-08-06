@@ -17,7 +17,8 @@ def is_conditional(data: list[TokenRawABC]) -> bool:
 
 
 def collapse_conditional(data: list[TokenRawABC | ControlRawCodeBlock],
-                      block: ControlRawCodeBlock) -> ControlRawIf:
+                         block: ControlRawCodeBlock,
+                         errors: list[OurSyntaxError], results: list[ControlRawABC]):
     match data[0].word:
         case KeyWords.ConditionalStart.value: _type = ConditionalPartTypes.start
         case KeyWords.ConditionalMiddle.value: _type = ConditionalPartTypes.middle
@@ -25,18 +26,18 @@ def collapse_conditional(data: list[TokenRawABC | ControlRawCodeBlock],
         case _: raise ValueError('что-то пошло не так')
 
     if _type == ConditionalPartTypes.end and len(data) > 1:
-        raise OurSyntaxError('В else не может быть условия', data[1].origin + data[-1].origin)
+        errors.append(OurSyntaxError('В else не может быть условия', data[1].origin + data[-1].origin))
     elif _type != ConditionalPartTypes.end and len(data) < 2:
-        raise OurSyntaxError('В if/elif должно быть условие', data[1].origin)
+        errors.append(OurSyntaxError('В if/elif должно быть условие', data[1].origin))
 
-    return ControlRawIf(
+    results.append(ControlRawIf(
         data[1:], block,
         ControlRawCodeBlock([], data[0].origin + data[-1].origin),
         _type, data[0].origin + data[-1].origin
-    )
+    ))
 
 
-def clue_conditional(data: list[ControlRawABC]):
+def clue_conditional(data: list[ControlRawABC], errors: list[OurSyntaxError]):
     last_if = None
     i = 0
     while i < len(data):
@@ -44,9 +45,9 @@ def clue_conditional(data: list[ControlRawABC]):
         if isinstance(control, ControlRawIf):
             if last_if is None:
                 if control.type is not ConditionalPartTypes.start:
-                    raise OurSyntaxError(f'Началом условной конструкции должен служить {KeyWords.ConditionalStart}',
-                                         control.origin)
-                last_if = control
+                    errors.append(OurSyntaxError(f'Началом условной конструкции должен служить {KeyWords.ConditionalStart}', control.origin))
+                else:
+                    last_if = control
             else:
                 # во всех случаях кроме начала конструкции мы удаляем конструкцию, т.к. она уже часть большей
                 match control.type:

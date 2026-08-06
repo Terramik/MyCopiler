@@ -13,34 +13,51 @@ def is_class(data: list[TokenRawABC]) -> bool:
     return False
 
 
-def collapse_class(data: list[TokenRawABC], block: ControlRawCodeBlock) -> ControlRawClass:
+def collapse_class(data: list[TokenRawABC], block: ControlRawCodeBlock,
+                   errors: list[OurSyntaxError], results: list[ControlRawABC]):
     if len(data) != 2:
-        raise OurSyntaxError('Неожиданное количество токенов, ожидалось class <имя>',
-                             data[0].origin + data[-1].origin)
+        errors.append(OurSyntaxError('Неожиданное количество токенов, ожидалось class <имя>',
+                                     data[0].origin + data[-1].origin))
+        return
+
     name = data[1]
     if not isinstance(name, TokenRawWord):
-        raise OurSyntaxError('Ожидалось слово(название класса)', name.origin)
+        errors.append(OurSyntaxError('Ожидалось слово(имя класса)', name.origin))
+        return
     name = name.word
 
     if len(block.block_parts) < 1:
-        raise OurSyntaxError('Не указан блок полей экземпляра', block.origin)
+        errors.append(OurSyntaxError('Отсутствует блок полей экземпляра', block.origin))
+        return
+
     instance_field = block.block_parts[0]
     if not isinstance(instance_field, ControlRawCodeBlock):
-        raise OurSyntaxError('Это не блок полей экзепляра', instance_field.origin)
-    for field in instance_field.block_parts:
+        errors.append(OurSyntaxError('Это не блок полей экзепляра', instance_field.origin))
+        return
+    i = 0
+    while i < len(instance_field.block_parts):
+        field = instance_field.block_parts[i]
         if not isinstance(field, ControlRawExpression):
-            raise OurSyntaxError('Неожиданная конструкция', field.origin)
+            errors.append(OurSyntaxError('Неожиданная конструкция', field.origin))
+            del instance_field.block_parts[i]
+        else:
+            i += 1
 
     block.block_parts = block.block_parts[1:]
-    for ect in block.block_parts:
-        if not isinstance(ect, (
+    i = 0
+    while i < len(block.block_parts):
+        tok = block.block_parts[i]
+        if not isinstance(tok, (
                 ControlRawFunctionDefinition, ControlRawExpression,
                 ControlRawTypedef, ControlRawClass, ControlRawEnum
         )):
-            raise OurSyntaxError('В классе разрешены только объявления функций, классов, '
-                                 'переменных, перечисления и псевдонимы', ect.origin)
+            errors.append(OurSyntaxError('В классе разрешены только объявления функций, классов, '
+                                         'переменных, перечисления и псевдонимы', tok.origin))
+            del block.block_parts[i]
+        else:
+            i += 1
 
-    return ControlRawClass(
+    results.append(ControlRawClass(
         name, instance_field, block,
         data[0].origin + data[-1].origin
-    )
+    ))

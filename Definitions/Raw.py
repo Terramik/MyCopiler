@@ -269,7 +269,8 @@ class ControlRawCycleControl(ControlRawABC):
 
 @dataclass(slots=True)
 class ControlRawTypedef(ControlRawABC):
-    tokens: list[TokenRawABC]
+    name: str
+    type: list[TokenRawABC]
     origin: TokenOrigin
 
     def __repr__(self):

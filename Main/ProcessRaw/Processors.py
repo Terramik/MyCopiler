@@ -35,14 +35,8 @@ def process_cycle_control(cont: ControlRawCycleControl) -> ControlCycleControl:
 
 
 def process_typedef(typedef: ControlRawTypedef) -> ControlTypedef:
-    data = typedef.tokens
-    if len(data) < 2:
-        raise OurSyntaxError('В псевдониме типа должно быть имя и тип', typedef.origin)
-    name = data[0]
-    if not isinstance(name, TokenRawWord):
-        raise OurSyntaxError('Имя псевдонима типа должно быть словом', name.origin)
     return ControlTypedef(
-        Type.Typedef(process_type(data[1:]), name.word), typedef.origin
+        Type.Typedef(process_type(typedef.type), typedef.name), typedef.origin
     )
 
 def process_enum(enum: ControlRawEnum) -> ControlEnum:

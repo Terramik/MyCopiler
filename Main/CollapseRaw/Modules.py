@@ -11,7 +11,8 @@ def is_import(data: list[TokenRawABC]) -> bool:
     return False
 
 
-def collapse_import(data: list[TokenRawABC]) -> ControlRawImport:
+def collapse_import(data: list[TokenRawABC],
+                    errors: list[OurSyntaxError], results: list[ControlRawABC]):
     i = 0
     n = len(data)
     while i < n:
@@ -21,23 +22,25 @@ def collapse_import(data: list[TokenRawABC]) -> ControlRawImport:
             break
         i += 1
     else:
-        raise OurSyntaxError(f'В импорте должно быть {KeyWords.Import_Part2.value}',
-                             data[0].origin + data[-1].origin)
+        errors.append(OurSyntaxError(f'В импорте должно быть {KeyWords.Import_Part2.value}',
+                                     data[0].origin + data[-1].origin))
+        return
 
     file = data[1:part2_i]
     if not file:
-        raise OurSyntaxError('В импорте не указан файл',
-                             data[0].origin + data[part2_i].origin)
+        errors.append(OurSyntaxError('В импорте не указан файл',
+                                     data[0].origin + data[part2_i].origin))
+        return
 
     names = data[part2_i + 1:]
     if not names:
-        raise OurSyntaxError('В импорте не указаны импортируемые имена',
-                             data[part2_i].origin + data[-1].origin)
+        errors.append(OurSyntaxError('В импорте не указаны импортируемые имена',
+                                     data[part2_i].origin + data[-1].origin))
 
-    return ControlRawImport(
-        file, split_by_comma(names, 'Имене в импорте должны быть указаны'),
+    results.append(ControlRawImport(
+        file, split_by_comma(names, 'Имена в импорте не указаны', errors),
         data[0].origin + data[-1].origin
-    )
+    ))
 
 
 def is_export(data: list[TokenRawABC]) -> bool:
@@ -47,13 +50,13 @@ def is_export(data: list[TokenRawABC]) -> bool:
     return False
 
 
-def collapse_export(data: list[TokenRawABC]) -> ControlRawExport:
-    names = data[1:]
-    if not names:
-        raise OurSyntaxError('В экспорте не указаны экспортируемые имена',
-                             data[0].origin + data[-1].origin)
+def collapse_export(data: list[TokenRawABC],
+                    errors: list[OurSyntaxError], results: list[ControlRawABC]):
+    if len(data) < 2:
+        errors.append(OurSyntaxError('В экспорте не указаны экспортируемые имена',
+                                     data[0].origin + data[-1].origin))
 
-    return ControlRawExport(
-        split_by_comma(names, 'Имена в экспорте должны быть указаны'),
+    results.append(ControlRawExport(
+        split_by_comma(data[1:], 'Имена в экспорте должны не указаны', errors),
         data[0].origin + data[-1].origin
-    )
+    ))

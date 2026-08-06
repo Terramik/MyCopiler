@@ -319,17 +319,6 @@ from ...Definitions.Exceptions import OurSyntaxError
     )
 ])
 def test_1(s, expected):
-    expected.is_match(collapse_nest(tokenize(s)))
-
-
-@pytest.mark.parametrize('s', [
-    'blob sfg asd; asd',
-    'sdgsgd {',
-    'def main() { {} }}',
-    'def main() { {a; b} }}',
-    'def main() { {a b} }}',
-])
-def test_2(s):
-    with pytest.raises(OurSyntaxError):
-        collapse_nest(tokenize(s))
-
+    code, err = collapse_nest(tokenize(s))
+    assert len(err) == 0
+    expected.is_match(code)

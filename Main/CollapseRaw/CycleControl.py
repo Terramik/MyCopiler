@@ -14,15 +14,17 @@ def is_cycle_control(data: list[TokenRawABC]) -> bool:
     return False
 
 
-def collapse_cycle_control(data: list[TokenRawABC]) -> ControlRawCycleControl:
+def collapse_cycle_control(data: list[TokenRawABC],
+                           errors: list[OurSyntaxError], results: list[ControlRawABC]):
     if len(data) != 1:
-        raise OurSyntaxError('Количество слов в управляющей конструкции цикла - исключительно одно',
-                             data[0].origin + data[-1].origin)
+        errors.append(OurSyntaxError('Количество слов в управляющей конструкции цикла - исключительно одно',
+                                     data[0].origin + data[-1].origin))
+        return
     match data[0].word:
         case KeyWords.CycleControlBreak.value: _type = CycleControlTypes.break_
         case KeyWords.CycleControlContinue.value: _type = CycleControlTypes.continue_
         case _: raise ValueError('что-то пошло не так')
-    return ControlRawCycleControl(
+    results.append(ControlRawCycleControl(
         _type, data[0].origin
-    )
+    ))
 

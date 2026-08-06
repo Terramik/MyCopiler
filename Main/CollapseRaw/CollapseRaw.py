@@ -18,7 +18,7 @@ from typing import Union
 NestedTokenRawList = list[Union[TokenRawABC, 'NestedRawTokenList']]
 
 
-def split_to_expressions(data: NestedTokenRawList, origin: TokenOrigin) -> ControlRawCodeBlock:
+def split_to_expressions(data: NestedTokenRawList, errors: list[OurSyntaxError], origin: TokenOrigin) -> ControlRawCodeBlock:
     """
     Разбивает списки на сырые выражения и управляющие конструкции
     """
@@ -39,55 +39,59 @@ def split_to_expressions(data: NestedTokenRawList, origin: TokenOrigin) -> Contr
                     continue
 
             if last_semicolon == i:
-                raise OurSyntaxError('Выражение без содержимого',
-                                     data[last_semicolon].origin + data[i].origin)
-
-            cut = data[last_semicolon:i]
-
-            if isinstance(tok, ControlRawCodeBlock):
-                if is_function(cut):
-                    result.append(collapse_function(cut, data[i]))
-                elif is_conditional(cut):
-                    result.append(collapse_conditional(cut, data[i]))
-                elif is_while(cut):
-                    result.append(collapse_while(cut, data[i]))
-                elif is_class(cut):
-                    result.append(collapse_class(cut, data[i]))
-                elif is_enum(cut):
-                    result.append(collapse_enum(cut, data[i]))
+                errors.append(OurSyntaxError('Выражение без содержимого',
+                                             data[last_semicolon].origin + data[i].origin))
 
             else:
-                if is_return(cut):
-                    result.append(collapse_return(cut))
-                elif is_mass_assignment(cut):
-                    result.append(collapse_mass_assignment(cut))
-                elif is_cycle_control(cut):
-                    result.append(collapse_cycle_control(cut))
-                elif is_typedef(cut):
-                    result.append(collapse_typedef(cut))
-                elif is_import(cut):
-                    result.append(collapse_import(cut))
-                elif is_export(cut):
-                    result.append(collapse_export(cut))
+                cut = data[last_semicolon:i]
+
+                if isinstance(tok, ControlRawCodeBlock):
+                    if is_function(cut):
+                        collapse_function(cut, data[i], errors, result)
+                    elif is_conditional(cut):
+                        collapse_conditional(cut, data[i], errors, result)
+                    elif is_while(cut):
+                        collapse_while(cut, data[i], errors, result)
+                    elif is_class(cut):
+                        collapse_class(cut, data[i], errors, result)
+                    elif is_enum(cut):
+                        collapse_enum(cut, data[i], errors, result)
+
                 else:
-                    # просто выражение
-                    result.append(ControlRawExpression(cut, data[last_semicolon].origin + data[i].origin))
+                    if is_return(cut):
+                        collapse_return(cut, errors, result)
+                    elif is_mass_assignment(cut):
+                        collapse_mass_assignment(cut, errors, result)
+                    elif is_cycle_control(cut):
+                        collapse_cycle_control(cut, errors, result)
+                    elif is_typedef(cut):
+                        collapse_typedef(cut, errors, result)
+                    elif is_import(cut):
+                        collapse_import(cut, errors, result)
+                    elif is_export(cut):
+                        collapse_export(cut, errors, result)
+                    else:
+                        # просто выражение
+                        result.append(ControlRawExpression(
+                            cut, data[last_semicolon].origin + data[i].origin
+                        ))
 
             last_semicolon = i + 1
         i += 1
 
     if last_semicolon != i:
-        raise OurSyntaxError('Обнаружены не обьеденённые в выражение токены',
-                             data[last_semicolon].origin + data[i - 1].origin)
-    clue_conditional(result)
+        errors.append(OurSyntaxError('Обнаружены не обьеденённые в выражение токены',
+                                     data[last_semicolon].origin + data[i - 1].origin))
+    clue_conditional(result, errors)
 
     return ControlRawCodeBlock(result, origin)
 
 
-def collapse_nest(data: list[TokenRawABC]) -> ControlRawCodeBlock:
+def collapse_nest(data: list[TokenRawABC]) -> tuple[ControlRawCodeBlock, list[OurSyntaxError]]:
     """
     Сворачивает все блоки кода, управляющие конструкции и выражения в их сырые версии.
     """
+    errors = []
 
     # свернём все {} во вложенные списки, так чтобы код в своих блоках представлялся просто как
     # некий абстрактный блок с кодом размером в 1 сущность, а также свернём все выражения и конструкции в блоках.
@@ -103,22 +107,26 @@ def collapse_nest(data: list[TokenRawABC]) -> ControlRawCodeBlock:
                 brace_pos_stack.append(tok.origin)
             elif tok.symbol == '}':
                 if not brace_stack:
-                    raise OurSyntaxError('Блок кода не был открыт', tok.origin)
-                last_i = brace_stack.pop()
-                brace_pos_stack.pop()
-                data[last_i] = split_to_expressions(data[last_i+1:i],
-                                                    data[last_i].origin + data[i].origin)
-                del data[last_i + 1: i + 1]
-                i = last_i
+                    # допустим, тут ничего не было
+                    errors.append(OurSyntaxError('Блок кода не был открыт', tok.origin))
+                else:
+                    last_i = brace_stack.pop()
+                    brace_pos_stack.pop()
+                    data[last_i] = split_to_expressions(data[last_i+1:i],
+                                                        data[last_i].origin + data[i] errors,.origin)
+                    del data[last_i + 1: i + 1]
+                    i = last_i
         i += 1
 
+    # добавим все незакрытые в ошибки
     if brace_stack:
-        raise OurSyntaxError('Блок кода не был закрыт', brace_pos_stack.pop())
+        for pos in brace_pos_stack:
+            errors.append(OurSyntaxError('Блок кода не был закрыт', pos))
 
     # теперь свернём самый верхний блок кода
 
     origin = data[0].origin + data[-1].origin if data else zero_origin
-    block = split_to_expressions(data, origin)
+    block = split_to_expressions(data, errors, origin)
 
     # проверим, что остались только объявления функций
     i = 0
@@ -133,9 +141,13 @@ def collapse_nest(data: list[TokenRawABC]) -> ControlRawCodeBlock:
             ControlRawExport,
             ControlRawEnum
         )):
-            raise OurSyntaxError('В глобальной области разрешены только объявления '
-                                 'функций, выражения, псевдонимы, классы, перечисления, экспорты и импорты', tok.origin)
-        i += 1
+            errors.append(
+                OurSyntaxError('В глобальной области разрешены только объявления '
+                               'функций, выражения, псевдонимы, классы, перечисления, экспорты и импорты', tok.origin)
+            )
+            del block.block_parts[i]
+        else:
+            i += 1
 
-    return block
+    return block, errors
 

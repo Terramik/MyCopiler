@@ -27,7 +27,8 @@ def is_mass_assignment(data: list[TokenRawABC]) -> bool:
     return False
 
 
-def collapse_mass_assignment(data: list[TokenRawABC]) -> ControlRawMassAssignment:
+def collapse_mass_assignment(data: list[TokenRawABC],
+                             errors: list[OurSyntaxError], results: list[ControlRawABC]):
     # найдём '='
     eq_i: int
     unclosed_bracket = 0
@@ -45,17 +46,19 @@ def collapse_mass_assignment(data: list[TokenRawABC]) -> ControlRawMassAssignmen
     else:
         raise ValueError('Что-то пошло не так')
 
-    # разделим на 2 половинки по la_bequille (индекс '=') и потом половинки разделим по запятым.
+    # разделим на 2 половинки по '=' и потом половинки разделим по запятым.
     left, right = data[:eq_i], data[eq_i + 1:]
     origin = data[0].origin + data[-1].origin
 
     if not left:
-        raise OurSyntaxError('Левая часть массового присваивания должна быть', origin)
+        errors.append(OurSyntaxError('Отсутствует левая часть массового присваивания.', origin))
+        return
     if not right:
-        raise OurSyntaxError('Правая часть массового присваивания должна быть', origin)
+        errors.append(OurSyntaxError('Отсутствует правая часть массового присваивания.', origin))
+        return
 
-    return ControlRawMassAssignment(
-        split_by_comma(left, 'Пустое wvalue у массового присваивания'),
-        split_by_comma(right, 'Пустое rvalue у массового присваивания'),
+    results.append(ControlRawMassAssignment(
+        split_by_comma(left, 'Пустое wvalue у массового присваивания', errors),
+        split_by_comma(right, 'Пустое rvalue у массового присваивания', errors),
         origin
-    )
+    ))

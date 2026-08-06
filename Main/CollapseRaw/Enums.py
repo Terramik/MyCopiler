@@ -12,12 +12,15 @@ def is_enum(data: list[TokenRawABC]) -> bool:
 
 
 def collapse_enum(data: list[TokenRawABC],
-                    block: ControlRawCodeBlock) -> ControlRawEnum:
+                  block: ControlRawCodeBlock,
+                  errors: list[OurSyntaxError], results: list[ControlRawABC]):
     if len(data) != 2:
-        raise OurSyntaxError('Неожиданное выражение', data[0].origin + data[-1].origin)
+        errors.append(OurSyntaxError('Неожиданное количество токенов', data[0].origin + data[-1].origin))
+        return
     name = data[1]
     if not isinstance(name, TokenRawWord):
-        raise OurSyntaxError('Ожидалось слово', name.origin)
+        errors.append(OurSyntaxError('Ожидалось слово(имя перечисления)', name.origin))
+        return
     name = name.word
     states = []
 
@@ -25,8 +28,10 @@ def collapse_enum(data: list[TokenRawABC],
         if not (isinstance(exp, ControlRawExpression) and
                 len(exp.tokens) == 1 and
                 isinstance(exp.tokens[0], TokenRawWord)):
-            raise OurSyntaxError('Неожиданная конструкция', exp.origin)
-        states.append(exp.tokens[0].word)
-    return ControlRawEnum(
+            errors.append(OurSyntaxError('Неожиданная конструкция, ожидалось имя состояния перечисления', exp.origin))
+        else:
+            states.append(exp.tokens[0].word)
+
+    results.append(ControlRawEnum(
         name, states, data[0].origin + block.origin
-    )
+    ))

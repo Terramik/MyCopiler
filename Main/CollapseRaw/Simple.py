@@ -3,7 +3,7 @@ from ...Definitions.Raw import *
 from ...Definitions.Exceptions import OurSyntaxError
 
 
-def split_by_comma(arr: list[TokenRawABC | ControlRawCodeBlock], err_s: str) -> \
+def split_by_comma(arr: list[TokenRawABC | ControlRawCodeBlock], err_s: str, errors: list[OurSyntaxError]) -> \
         list[list[TokenRawABC | ControlRawCodeBlock]]:
     """
     Разделяет массив на подмассивы по запятым, не лежачим в скобках
@@ -23,17 +23,14 @@ def split_by_comma(arr: list[TokenRawABC | ControlRawCodeBlock], err_s: str) -> 
                 case ',':
                     if unclosed_bracket == 0:
                         if last_comma == i:
-                            raise OurSyntaxError(err_s, arr[last_comma].origin + tok.origin)
-                        res.append(arr[last_comma:i])
-                        last_comma = i + 1
+                            errors.append(OurSyntaxError(err_s, arr[last_comma].origin + tok.origin))
+                        else:
+                            res.append(arr[last_comma:i])
+                            last_comma = i + 1
+
     if last_comma == len(arr):
-        raise OurSyntaxError(err_s, arr[-1].origin)
-    res.append(arr[last_comma:])
+        errors.append(OurSyntaxError(err_s, arr[-1].origin))
+    else:
+        res.append(arr[last_comma:])
+
     return res
-
-
-def is_elements_not_clean(arr: list[list[...]]) -> bool:
-    for a in arr:
-        if not a:
-            return False
-    return True

@@ -5,7 +5,7 @@ from ...Definitions.Exceptions import OurSyntaxError
 
 
 def is_function(data: list[TokenRawABC]) -> bool:
-    if len(data) == 0:
+    if len(data) < 1:
         return False
     if isinstance(data[0], TokenRawWord) and data[0].word == KeyWords.Function.value:
         return True
@@ -13,21 +13,25 @@ def is_function(data: list[TokenRawABC]) -> bool:
 
 
 def collapse_function(data: list[TokenRawABC | ControlRawCodeBlock],
-                      block: ControlRawCodeBlock) -> ControlRawFunctionDefinition:
+                      block: ControlRawCodeBlock,
+                      errors: list[OurSyntaxError], results: list[ControlRawABC]):
     """
     Сворачивает функцию. Не меняет массив data, только достаёт из него информацию.
     В случае несоответствия токенов паттерну функции, может выдать кучу разных OurSyntaxError.
     """
-    # проверем штуки
+    # проверим штуки
     if len(data) < 4:
-        raise OurSyntaxError('обьявление слишком короткое', data[0].origin)
+        errors.append(OurSyntaxError('Cлишком мало токенов для объявления функции', data[0].origin + data[-1].origin))
+        return
 
     f_name = data[1]
     if not isinstance(f_name, TokenRawWord):
-        raise OurSyntaxError('за объявление функции не следует её имя', f_name.origin)
+        errors.append(OurSyntaxError('За объявлением функции не следует её имя', f_name.origin))
+        return
     tok = data[2]
     if not isinstance(tok, TokenRawSymbol) or tok.symbol != '(':
-        raise OurSyntaxError('за именем функции не следует \'(\' ', tok.origin)
+        errors.append(OurSyntaxError('За именем функции не следует "(" ', tok.origin))
+        return
 
     # выделим аргументы
     last_tok = len(data)
@@ -50,18 +54,20 @@ def collapse_function(data: list[TokenRawABC | ControlRawCodeBlock],
                     depth -= 1
         end += 1
     if not closed:
-        raise OurSyntaxError('Блок параметров функции не был закрыт', data[2].origin + data[-2].origin)
-    params = split_by_comma(data[start:end], 'Пустой параметр')
+        errors.append(OurSyntaxError('Блок параметров функции не был закрыт', data[2].origin + data[-2].origin))
+        return
+    params = split_by_comma(data[start:end], 'Пустой параметр', errors)
 
     # выделим результаты, если есть
-    results = []
+    results_types = []
     if end != last_tok - 1:
         tok = data[end + 1]
         if isinstance(tok, TokenRawSymbol) and tok.symbol == '->':
             # у функции есть результаты
             tok = data[end + 2]
             if not isinstance(tok, TokenRawSymbol) or tok.symbol != '(':
-                raise OurSyntaxError('за -> функции не следует \'(\' ', tok.origin)
+                errors.append(OurSyntaxError('За -> функции не следует "(" ', tok.origin))
+                return
 
             # получаем результаты
             start = end + 3
@@ -83,12 +89,12 @@ def collapse_function(data: list[TokenRawABC | ControlRawCodeBlock],
                             depth -= 1
                 end += 1
             if not closed:
-                raise OurSyntaxError('Блок результатов функции не был закрыт',
-                                     data[2].origin + data[-2].origin)
-            results = split_by_comma(data[start:end], 'Пустой параметр')
+                errors.append(OurSyntaxError('Блок результатов функции не был закрыт',
+                                             data[2].origin + data[-2].origin))
+            results_types = split_by_comma(data[start:end], 'Пустой результат', errors)
 
-    return ControlRawFunctionDefinition(
-        f_name.word, params, results, block,
+    results.append(ControlRawFunctionDefinition(
+        f_name.word, params, results_types, block,
         data[0].origin + data[-1].origin
-    )
+    ))
 

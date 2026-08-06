@@ -11,10 +11,11 @@ def is_while(data: list[TokenRawABC]) -> bool:
     return False
 
 
-def collapse_while(data: list[TokenRawABC], block: ControlRawCodeBlock) -> ControlRawWhile:
+def collapse_while(data: list[TokenRawABC], block: ControlRawCodeBlock,
+                   errors: list[OurSyntaxError], results: list[ControlRawABC]):
     if len(data) < 2:
-        raise OurSyntaxError('В условии цикла while должно что-то стоять,', data[0].origin)
-    return ControlRawWhile(
+        errors.append(OurSyntaxError('Отсутствие условия в цикле while', data[0].origin))
+    results.append(ControlRawWhile(
         data[1:], block, data[0].origin + data[-1].origin
-    )
+    ))
 
