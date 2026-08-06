@@ -26,13 +26,6 @@
         ],
         "configuration": "./language-configuration.json"
       }
-    ],
-    "grammars_": [
-      {
-        "language": "mylang",
-        "scopeName": "source.mylang",
-        "path": "./syntaxes/mylang.tmLanguage.json"
-      }
     ]
   },
   "dependencies": {

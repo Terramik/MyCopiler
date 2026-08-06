@@ -70,15 +70,15 @@ module = Module(
         ),
 
         make_v('stdin', types.class_instance(IOStream), expr, realization, '''
-            (IOStream_ourinstance){stdin};
+            (IOStreaminstance){stdin};
         '''),
 
         make_v('stdout', types.class_instance(IOStream), expr, realization, '''
-            (IOStream_ourinstance){stdout};
+            (IOStreaminstance){stdout};
         '''),
 
         make_v('stderr', types.class_instance(IOStream), expr, realization, '''
-            (IOStream_ourinstance){stderr};
+            (IOStreaminstance){stderr};
         '''),
 
         # make_f('print_b', [
@@ -122,7 +122,7 @@ make_cls_f(IOStream, 'open', [
 ], [
     IOStreamInst
 ], expr, realization, '''
-return (IOStream_ourinstance){
+return (IOStreaminstance){
     fopen((char*)(path.start), (char*)(mode.start))
 };
 ''')

@@ -1,6 +1,6 @@
 
-#ifndef FILE_6290967711860600592_H
-#define FILE_6290967711860600592_H
+#ifndef FILE_4774879056047634565_H
+#define FILE_4774879056047634565_H
 #include "../../project_base.h"
 
 #include "../../Math/Quaternions.h"
@@ -17,5 +17,5 @@ extern int64_t CAM_SIZE_X;
 extern int64_t CAM_SIZE_Y;
 extern int64_t FPS;
 extern Quaternioninstance Q_ROTATE;
-void vars_initializer_35a64f417dec4028ba7442cd13e5e4db();
+void vars_initializer_89b780f320b748b29956c499b1e05da4();
 #endif

@@ -42,7 +42,7 @@ def make_v(name: str, type: Type, export_data: list, real_dict: dict, real: str)
 
 
 def make_cls(name: str, export_data: list, real_dict: dict, real_field: str) -> ControlClass:
-    nontrue_name = f'{name}_our'
+    nontrue_name = f'{name}'
 
     cls = ControlClass(nontrue_name, [], ControlCodeBlock([], zero_origin), zero_origin)
     cls_var = TokenOperatorVariableDefinition(

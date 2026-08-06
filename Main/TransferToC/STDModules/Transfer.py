@@ -107,8 +107,8 @@ def write_module(name: str, mod: Module, path: Path, data: DataContainer, compil
     realization = std_realization[name]
     initializers: list[str] = []
 
-    path_c = path / 'include' / f'{name}_our.c'
-    path_h = path / 'src' / f'{name}_our.h'
+    path_c = path / 'src' / f'{name}_our.c'
+    path_h = path / 'include' / f'{name}_our.h'
     path_o = path / 'obj' / f'{name}_our.o'
     all_obj.append(path_o)
 
@@ -162,7 +162,6 @@ f'void vars_initializer_{name}()''{'
 
     if result.returncode != 0:
         raise ValueError(f'Критическая ошибка при компиляции объектников: \n{result.stderr}')
-
 
 
 def retransfer_str_modules(compiler: str):

@@ -5,10 +5,10 @@
 #include "base.h"
 
 void vars_initializer_io();
-            
-extern IOStream_ourtype IOStream_our;
-extern IOStream_ourinstance stdin_our;
-extern IOStream_ourinstance stdout_our;
-extern IOStream_ourinstance stderr_our;
+    
+extern IOStreamtype IOStream;
+extern IOStreaminstance stdin_our;
+extern IOStreaminstance stdout_our;
+extern IOStreaminstance stderr_our;
 
 #endif

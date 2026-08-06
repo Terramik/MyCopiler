@@ -55,45 +55,45 @@ static inline bool print_iter(str_t str, bool* format_used, bool* format_mode, s
     return false;
 }
 
-    IOStream_ourinstance __init__g(void* _par){
+    IOStreaminstance __init__g(void* _par){
         
 printf("Use \"open\" for creating IOStream instances");
 abort();
 
     }
-    IOStream_ourinstance openg(str_t path, str_t mode,void* _par){
+    IOStreaminstance openg(str_t path, str_t mode,void* _par){
         
-return (IOStream_ourinstance){
+return (IOStreaminstance){
     fopen((char*)(path.start), (char*)(mode.start))
 };
 
     }
-    void __del__g(IOStream_ourinstance self,void* _par){
+    void __del__g(IOStreaminstance self,void* _par){
         
 fclose(self.file);
 
     }
-    bool is_eofg(IOStream_ourinstancep stream,void* _par){
+    bool is_eofg(IOStreaminstancep stream,void* _par){
         
 return feof(stream->file) != 0;
 
     }
-    bool is_errg(IOStream_ourinstancep stream,void* _par){
+    bool is_errg(IOStreaminstancep stream,void* _par){
         
 return stream->file != NULL && ferror(stream->file) != 0;
 
     }
-    bool goodg(IOStream_ourinstancep stream,void* _par){
+    bool goodg(IOStreaminstancep stream,void* _par){
         
 return (feof(stream->file) == 0) && (ferror(stream->file) == 0);
 
     }
-    uint8_t getcg(IOStream_ourinstancep stream,void* _par){
+    uint8_t getcg(IOStreaminstancep stream,void* _par){
         
 return fgetc(stream->file);
 
     }
-    uint64_t getlg(IOStream_ourinstancep stream, str_t buf,void* _par){
+    uint64_t getlg(IOStreaminstancep stream, str_t buf,void* _par){
         
 FILE* file = stream->file;
 uint64_t i = 0;
@@ -106,7 +106,7 @@ while (i < buf._0 && (feof(stream->file) == 0) && (ferror(stream->file) == 0)) {
 return i;
 
     }
-    uint64_t getsg(IOStream_ourinstancep stream, str_t buf,void* _par){
+    uint64_t getsg(IOStreaminstancep stream, str_t buf,void* _par){
         
 FILE* file = stream->file;
 uint64_t i = 0; 
@@ -118,12 +118,12 @@ while (i < buf._0 && (feof(stream->file) == 0) && (ferror(stream->file) == 0)) {
 return i;
 
     }
-    void putcg(IOStream_ourinstancep stream, uint8_t ch,void* _par){
+    void putcg(IOStreaminstancep stream, uint8_t ch,void* _par){
         
 fputc(ch, stream->file);
 
     }
-    uint64_t putsg(IOStream_ourinstancep stream, str_t str,void* _par){
+    uint64_t putsg(IOStreaminstancep stream, str_t str,void* _par){
         
 uint64_t i = 0;
 while (i < str._0 && (feof(stream->file) == 0) && (ferror(stream->file) == 0)) {
@@ -133,32 +133,32 @@ while (i < str._0 && (feof(stream->file) == 0) && (ferror(stream->file) == 0)) {
 return i;
 
     }
-    int64_t posg(IOStream_ourinstancep stream,void* _par){
+    int64_t posg(IOStreaminstancep stream,void* _par){
         
 return ftell(stream->file);
 
     }
-    void gotosg(IOStream_ourinstancep stream, int64_t pos,void* _par){
+    void gotosg(IOStreaminstancep stream, int64_t pos,void* _par){
         
 fseek(stream->file, pos, SEEK_SET);
 
     }
-    void jumpg(IOStream_ourinstancep stream, int64_t pos,void* _par){
+    void jumpg(IOStreaminstancep stream, int64_t pos,void* _par){
         
 fseek(stream->file, pos, SEEK_CUR);
 
     }
-    void gotoeg(IOStream_ourinstancep stream, int64_t pos,void* _par){
+    void gotoeg(IOStreaminstancep stream, int64_t pos,void* _par){
         
 fseek(stream->file, pos, SEEK_END);
 
     }
-    void flushg(IOStream_ourinstancep stream,void* _par){
+    void flushg(IOStreaminstancep stream,void* _par){
         
 fflush(stream->file);
 
     }
-    void print_ig(IOStream_ourinstancep stream, str_t format, int64_t i,void* _par){
+    void print_ig(IOStreaminstancep stream, str_t format, int64_t i,void* _par){
         
 int mod_min = INT_MIN;
 
@@ -198,7 +198,7 @@ if ( !format_used ) { printf("no quantifier found"); abort(); }
 if ( format_mode ) { printf("quantifier was not finished"); }
 
     }
-    void print_ug(IOStream_ourinstancep stream, str_t format, uint64_t u,void* _par){
+    void print_ug(IOStreaminstancep stream, str_t format, uint64_t u,void* _par){
         
 int mod_min = INT_MIN;
 
@@ -238,7 +238,7 @@ if ( !format_used ) { printf("no quantifier found"); abort(); }
 if ( format_mode ) { printf("quantifier was not finished"); }
 
     }
-    void print_fg(IOStream_ourinstancep stream, str_t format, double f,void* _par){
+    void print_fg(IOStreaminstancep stream, str_t format, double f,void* _par){
         
 int mod_min = INT_MIN;
 int mod_decimal = INT_MIN;
@@ -290,7 +290,7 @@ if ( !format_used ) { printf("no quantifier found"); abort(); }
 if ( format_mode ) { printf("quantifier was not finished"); }
 
     }
-    void print_bg(IOStream_ourinstancep stream, str_t format, bool b,void* _par){
+    void print_bg(IOStreaminstancep stream, str_t format, bool b,void* _par){
         
 bool is_full = false;
 
@@ -329,7 +329,7 @@ if ( !format_used ) { printf("no quantifier found"); abort(); }
 if ( format_mode ) { printf("quantifier was not finished"); }
 
     }
-    void print_cg(IOStream_ourinstancep stream, str_t format, uint8_t c,void* _par){
+    void print_cg(IOStreaminstancep stream, str_t format, uint8_t c,void* _par){
         
 bool format_used = false;
 bool format_mode = false;
@@ -356,22 +356,22 @@ while (i < format._0) {
 if ( !format_used ) { printf("no quantifier found"); abort(); }
 if ( format_mode ) { printf("quantifier was not finished"); }
 
-    }IOStream_ourtype IOStream_our;
-IOStream_ourinstance stdin_our;
-IOStream_ourinstance stdout_our;
-IOStream_ourinstance stderr_our;
+    }IOStreamtype IOStream;
+IOStreaminstance stdin_our;
+IOStreaminstance stdout_our;
+IOStreaminstance stderr_our;
 void vars_initializer_io(){
-    IOStream_our = (IOStream_ourtype){
+    IOStream = (IOStreamtype){
         .__init__ = __init__g,.open = openg,.__del__ = __del__g,.is_eof = is_eofg,.is_err = is_errg,.good = goodg,.getc = getcg,.getl = getlg,.gets = getsg,.putc = putcg,.puts = putsg,.pos = posg,.gotos = gotosg,.jump = jumpg,.gotoe = gotoeg,.flush = flushg,.print_i = print_ig,.print_u = print_ug,.print_f = print_fg,.print_b = print_bg,.print_c = print_cg
     };
 
     stdin_our = 
-            (IOStream_ourinstance){stdin};
+            (IOStreaminstance){stdin};
         ;
 stdout_our = 
-            (IOStream_ourinstance){stdout};
+            (IOStreaminstance){stdout};
         ;
 stderr_our = 
-            (IOStream_ourinstance){stderr};
+            (IOStreaminstance){stderr};
         ;
 }

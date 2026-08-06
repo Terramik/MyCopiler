@@ -11,7 +11,7 @@ alias uint8_s2 (uint8[,]);
 
 def print_field(field_status bool_s2) {
     var y uint64; var x uint64;
-
+    
     y = 0;
     while y < SIZE_Y {
         x = 0;

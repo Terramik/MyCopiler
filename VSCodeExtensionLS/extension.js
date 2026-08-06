@@ -17,11 +17,15 @@ function activate(context) {
     };
 
     const clientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'mylang' }]
+        documentSelector: [{ scheme: 'file', language: 'mylang' }],
     };
 
     client = new LanguageClient('myLangServer', 'My Lang Server', serverOptions, clientOptions);
+    
     client.start();
+
+    
+
 }
 
 function deactivate() {

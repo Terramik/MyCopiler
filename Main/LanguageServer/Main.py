@@ -8,7 +8,7 @@ from .PositionToNode import position_to_node, position_to_node_with_scope
 from lsprotocol import types
 from urllib.parse import urlparse, unquote, quote
 import sys
-
+from .SemanticPainter import *
 
 p = Path(__file__).parent / 'logs.txt'
 
@@ -49,13 +49,12 @@ class OurLanguageServer(LanguageServer):
     def pygls_position_to_our_position(position: types.Position) -> TextPosition:
         return TextPosition(position.line, position.character)
 
-
     def analyze_module(self, path: Path):
         is_bad, err = analyze_module(path, self.processed_modules)
         if is_bad:
             self.text_document_publish_diagnostics(
                 types.PublishDiagnosticsParams(
-                    path.as_posix(), [types.Diagnostic(
+                    path.as_uri(), [types.Diagnostic(
                         range=self.token_origin_to_pygls_range(err.position),
                         message=err.args[0],
                         severity=types.DiagnosticSeverity.Error
@@ -66,13 +65,13 @@ class OurLanguageServer(LanguageServer):
         else:
             self.text_document_publish_diagnostics(
                 types.PublishDiagnosticsParams(
-                    path.as_posix(), []
+                    path.as_uri(), []
                 )
             )
             self.is_mod_good[path] = True
 
 
-server = OurLanguageServer('mylang', 'v0.1')
+server = OurLanguageServer('MyLangLS', 'v0.1')
 
 
 @server.feature(types.INITIALIZE)
@@ -87,7 +86,15 @@ def initialize(ls, params):
                 save=True,
             ),
             definition_provider=True,
-            hover_provider=True
+            hover_provider=True,
+            semantic_tokens_provider=types.SemanticTokensOptions(
+                legend=types.SemanticTokensLegend(
+                    token_types=LEGEND_TOKEN_TYPES,
+                    token_modifiers=LEGEND_MODIFIERS
+                ),
+                full=True,
+                range=False
+            )
         )
     )
 
@@ -122,7 +129,7 @@ def goto_definition(ls: OurLanguageServer, params: types.DefinitionParams):
             # если переменная импортирована
             for imp in mod.import_:
                 if imp.thing is tok:
-                    if imp.from_.is_std: # костыль, т.к. будет сложно сдвинуть их к объявлению в си файле
+                    if imp.from_.is_std:  # костыль, т.к. будет сложно сдвинуть их к объявлению в си файле
                         return None
 
                     exp = imp.from_.find_export(imp.name)
@@ -144,9 +151,9 @@ def goto_definition(ls: OurLanguageServer, params: types.DefinitionParams):
 def type_to_hover_hint(type: Type) -> str:
     if type.is_simple_func:
         return f'func ({
-            ', '.join(map(type_to_hover_hint, type.simple.arguments))
+        ', '.join(map(type_to_hover_hint, type.simple.arguments))
         }) -> ({
-            ', '.join(map(type_to_hover_hint, type.simple.results))
+        ', '.join(map(type_to_hover_hint, type.simple.results))
         })'
     elif type.is_simple_typedef:
         return f'**{type}** aka **{type.full_type}**'
@@ -174,7 +181,7 @@ def hover(ls: OurLanguageServer, params: types.HoverParams):
     elif isinstance(tok, (TokenOperatorRvalueABC, TokenOperatorWvalueABC)):
         type = tok.res_type
     elif isinstance(tok, Type):
-        type = tok # зачем тип типу? хз.
+        type = tok  # зачем тип типу? хз.
 
     if type is not None:
         return types.Hover(
@@ -185,6 +192,25 @@ def hover(ls: OurLanguageServer, params: types.HoverParams):
             ls.token_origin_to_pygls_range(tok.origin)
         )
     return None
+
+
+@server.feature(types.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL)
+def semantic_tokens_full(ls: OurLanguageServer, params: types.SemanticTokensParams):
+    with open(Path(__file__).parent / 'logs.txt', 'a') as f:
+        print('SEMANTIC', file=f)
+
+    assert False
+
+    # путь и модуль
+    path = ls.uri_to_path(params.text_document.uri)
+
+    if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
+        return None
+    mod = ls.processed_modules.get(path)
+
+    data = sematic_print(mod)
+
+    return types.SemanticTokens(data)
 
 
 server.start_io()

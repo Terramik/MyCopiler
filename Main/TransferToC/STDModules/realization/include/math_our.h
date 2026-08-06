@@ -5,7 +5,7 @@
 #include "base.h"
 
 void vars_initializer_math();
-            
+    
 extern _ftdouble__doubleft__env abs_our;
 extern _ftint64_t__int64_tft__env absi_our;
 extern _ftdouble__doubleft__env sin_our;
