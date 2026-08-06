@@ -77,7 +77,11 @@ def test_1(s, expected):
     )
 ])
 def test_collapse_mass_assignment(s, expected):
-    expected.is_match(collapse_mass_assignment(tokenize(s)))
+    err, res = [], []
+    collapse_mass_assignment(tokenize(s), err, res)
+    assert not err
+    assert len(res) == 1
+    expected.is_match(res[0])
 
 
 @pytest.mark.parametrize("s", [
@@ -87,5 +91,6 @@ def test_collapse_mass_assignment(s, expected):
     "a, b = c,,d",
 ])
 def test_3(s):
-    with pytest.raises(OurSyntaxError):
-        collapse_mass_assignment(tokenize(s))
+    err, res = [], []
+    collapse_mass_assignment(tokenize(s), err, res)
+    assert err

@@ -79,7 +79,11 @@ dummy_check_block = CheckControlRawCodeBlock([])
     )
 ])
 def test_2(s, expected):
-    expected.is_match(collapse_function(tokenize(s), dummy_block))
+    err, res = [], []
+    collapse_function(tokenize(s), dummy_block, err, res)
+    assert not err
+    assert len(res) == 1
+    expected.is_match(res[0])
 
 
 @pytest.mark.parametrize('s', [
@@ -92,5 +96,6 @@ def test_2(s, expected):
     'def foo()->(',
 ])
 def test_3(s):
-    with pytest.raises(OurSyntaxError):
-        collapse_function(tokenize(s), dummy_block)
+    err, res = [], []
+    collapse_function(tokenize(s), dummy_block, err, res)
+    assert err

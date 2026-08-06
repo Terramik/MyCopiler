@@ -53,7 +53,11 @@ def test_1(s, expected):
     )
 ])
 def test_2(s, expected):
-    expected.is_match(collapse_return(tokenize(s)))
+    err, res = [], []
+    collapse_return(tokenize(s), err, res)
+    assert not err
+    assert len(res) == 1
+    expected.is_match(res[0])
 
 
 @pytest.mark.parametrize('s', [
@@ -63,5 +67,6 @@ def test_2(s, expected):
     'return a,,b',
 ])
 def test_3(s):
-    with pytest.raises(OurSyntaxError):
-        collapse_return(tokenize(s))
+    err, res = [], []
+    collapse_return(tokenize(s), err, res)
+    assert err

@@ -106,7 +106,9 @@ dummy_check_block = CheckControlRawCodeBlock([])
     ),
 ])
 def test_2(code, expected):
-    expected.is_match(collapse_raw(tokenize(code)).block_parts[0])
+    code, err = collapse_raw(tokenize(code))
+    assert not err
+    expected.is_match(code.block_parts[0])
 
 
 @pytest.mark.parametrize('s, block', [
@@ -116,5 +118,6 @@ def test_2(code, expected):
     ('class blob', ControlRawCodeBlock([], zero_origin)),
 ])
 def test_3(s, block):
-    with pytest.raises(OurSyntaxError):
-        collapse_class(tokenize(s), block)
+    err = []
+    collapse_class(tokenize(s), block, err, [])
+    assert err

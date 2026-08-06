@@ -62,8 +62,11 @@ from ...Main.CollapseRaw.Simple import split_by_comma
 
 ])
 def test_1(s, needed):
+    err = []
     tokens = tokenize(s)
-    result = split_by_comma(tokens, "ошибка")
+    result = split_by_comma(tokens, "ошибка", err)
+
+    assert not err
 
     assert len(result) == len(needed)
 
@@ -80,8 +83,8 @@ def test_1(s, needed):
     'blob,,,', 'x,x,', ',x,x', 'x,,x', ','
 ])
 def test_2(forbidden):
-    tokens = tokenize(forbidden)
-    with pytest.raises(OurSyntaxError):
-        split_by_comma(tokens, '')
+    err = []
+    split_by_comma(tokenize(forbidden), '', err)
+    assert err
 
 

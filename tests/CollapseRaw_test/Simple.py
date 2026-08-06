@@ -161,11 +161,14 @@ class CheckControlRawCycleControl(CheckABS):
 
 @dataclass(slots=True)
 class CheckControlRawTypedef(CheckABS):
-    data: list[CheckTokenRaw]
+    name: str
+    type: list[CheckTokenRaw]
 
     def is_match(self, control: ControlRawTypedef | ...):
         assert isinstance(control, ControlRawTypedef)
-        check_depth_one(self.data, control.tokens)
+        assert self.name == control.type
+        check_depth_one(self.type, control.type)
+
 
 @dataclass(slots=True)
 class CheckControlRawClass(CheckABS):

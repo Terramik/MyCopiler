@@ -112,8 +112,8 @@ def collapse_nest(data: list[TokenRawABC]) -> tuple[ControlRawCodeBlock, list[Ou
                 else:
                     last_i = brace_stack.pop()
                     brace_pos_stack.pop()
-                    data[last_i] = split_to_expressions(data[last_i+1:i],
-                                                        data[last_i].origin + data[i] errors,.origin)
+                    data[last_i] = split_to_expressions(data[last_i+1:i], errors,
+                                                        data[last_i].origin + data[i].origin)
                     del data[last_i + 1: i + 1]
                     i = last_i
         i += 1

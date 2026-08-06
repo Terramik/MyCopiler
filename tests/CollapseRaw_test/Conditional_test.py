@@ -56,7 +56,12 @@ dummy_check_block = CheckControlRawCodeBlock([])
     ),
 ])
 def test_2(s, expected):
-    expected.is_match(collapse_conditional(tokenize(s), dummy_block))
+    err = []
+    res = []
+    collapse_conditional(tokenize(s), dummy_block, err, res)
+    assert not err
+    assert len(res) == 1
+    expected.is_match(res[0])
 
 
 @pytest.mark.parametrize('s, expected', [
@@ -172,9 +177,15 @@ def test_2(s, expected):
     ),
 ])
 def test_3(s, expected):
-    s = [collapse_conditional(tokenize(l), dummy_block) if l is not None else dummy_block for l in s]
-    clue_conditional(s)
-    check_depth_one(expected, s)
+    err, res = [], []
+    for l in s:
+        if l is not None:
+            collapse_conditional(tokenize(l), dummy_block, err, res)
+        else:
+            res.append(dummy_block)
+    clue_conditional(res, err)
+    assert not err
+    check_depth_one(expected, res)
 
 
 @pytest.mark.parametrize('s', [
@@ -198,10 +209,12 @@ def test_3(s, expected):
     ],
 ])
 def test_4(s):
-    s = [collapse_conditional(tokenize(l), dummy_block) if l is not None else dummy_block for l in s]
-    with pytest.raises(OurSyntaxError):
-        clue_conditional(s)
-
-
-
+    err, res = [], []
+    for l in s:
+        if l is not None:
+            collapse_conditional(tokenize(l), dummy_block, err, res)
+        else:
+            res.append(dummy_block)
+    clue_conditional(res, err)
+    assert err
 

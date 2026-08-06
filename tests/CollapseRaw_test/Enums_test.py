@@ -50,7 +50,11 @@ dummy_block = ControlRawCodeBlock([], zero_origin)
     )
 ])
 def test_2(s, code_block, expected):
-    expected.is_match(collapse_enum(tokenize(s), code_block))
+    err, res = [], []
+    collapse_enum(tokenize(s), code_block, err, res)
+    assert len(res) == 1
+    assert not err
+    expected.is_match(res[0])
 
 
 @pytest.mark.parametrize('s', [
@@ -59,5 +63,7 @@ def test_2(s, code_block, expected):
     'enum foo( asd asd',
 ])
 def test_3(s):
-    with pytest.raises(OurSyntaxError):
-        collapse_enum(tokenize(s), dummy_block)
+    err, res = [], []
+    collapse_enum(tokenize(s), dummy_block, err, res)
+    assert err
+
