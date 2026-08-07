@@ -454,6 +454,5 @@ class ErrorType(Type):
         self.origin = origin
 
 
-
 t_bool = Type(Type.SimpleTypeBase(BaseTypes.bool), [])
-t_error = ErrorType()
+t_error = ErrorType(zero_origin)

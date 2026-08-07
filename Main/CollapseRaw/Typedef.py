@@ -21,5 +21,5 @@ def collapse_typedef(data: list[TokenRawABC],
         errors.append(OurSyntaxError('Ожидалось слово(имя псевдонима)', name.origin))
         return
     results.append(ControlRawTypedef(
-        name.word, data[1:], data[0].origin + data[-1].origin
+        name.word, data[2:], data[0].origin + data[-1].origin
     ))

@@ -5,6 +5,7 @@ from ...Main.ProcessRaw import process_raw
 from ...Definitions.Tokens import *
 from ...Definitions.Raw import ControlRawCodeBlock
 from ...Definitions.Enums import TokenOperatorBinaryTypes, TokenOperatorPrefixTypes
+from ...Definitions.Exceptions import OurSyntaxError
 from dataclasses import dataclass
 from typing import Any
 from io import StringIO
@@ -12,11 +13,17 @@ from abc import ABC, abstractmethod
 
 
 def tokenize_and_process(code: str) -> ControlRawCodeBlock:
-    return collapse_raw(tokenize_file(StringIO(code), zero_origin.file))
+    code, err = collapse_raw(tokenize_file(StringIO(code), zero_origin.file))
+    assert not err
+    return code
 
 
 def tokenize_and_process_raw(code: str) -> ControlCodeBlock:
-    return process_raw(collapse_raw(tokenize_file(StringIO(code), zero_origin.file)))
+    raw_code, err = collapse_raw(tokenize_file(StringIO(code), zero_origin.file))
+    code, err2 = process_raw(raw_code)
+    err = err + err2
+    assert not err
+    return code
 
 
 def check_list(need: list[CheckNode], have: list[Any]) -> None:

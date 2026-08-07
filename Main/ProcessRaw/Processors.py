@@ -9,7 +9,7 @@ from .Parsers import *
 def process_expression(expr: ControlRawExpression, errors: list[OurSyntaxError]) -> ControlExpression:
     # можем r\w значениями, так что просто
     return ControlExpression(
-        process_any_value(expr.tokens),
+        process_any_value(expr.tokens, errors),
         expr.origin)
 
 
@@ -74,7 +74,7 @@ def import_export_check_names(tokens_names: list[list[TokenRawABC]], errors: lis
             name = name[0]
 
             is_name = isinstance(name, TokenRawWord)
-            is_as = isinstance(as_, TokenRawSymbol) and as_.symbol != KeyWords.Import_Export_Alias.value
+            is_as = isinstance(as_, TokenRawSymbol) and as_.symbol == KeyWords.Import_Export_Alias.value
             is_alias = isinstance(alias, TokenRawWord)
 
             if not (is_name and is_as and is_alias):
@@ -179,9 +179,7 @@ def process_class(class_: ControlRawClass, errors: list[OurSyntaxError]) -> Cont
     )
 
 
-def process_code_block(block: ControlRawCodeBlock) -> tuple[ControlCodeBlock, list[OurSyntaxError]]:
-    errors = []
-
+def process_code_block(block: ControlRawCodeBlock, errors: list[OurSyntaxError]) -> ControlCodeBlock:
     def inner(data: ControlRawCodeBlock, errors: list[OurSyntaxError]) -> ControlCodeBlock:
         res = []
         for control in data.block_parts:
@@ -215,11 +213,12 @@ def process_code_block(block: ControlRawCodeBlock) -> tuple[ControlCodeBlock, li
 
         return ControlCodeBlock(res, data.origin)
 
-    return inner(block, errors), errors
+    return inner(block, errors)
 
 
-def process_raw(block: ControlRawCodeBlock) -> ControlCodeBlock:
-    return process_code_block(block)
+def process_raw(block: ControlRawCodeBlock) -> tuple[ControlCodeBlock, list[OurSyntaxError]]:
+    errors = []
+    return process_code_block(block, errors), errors
 
 
 
