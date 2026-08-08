@@ -38,6 +38,7 @@ class ControlFunctionDefinition(ControlABC):
     var: TokenOperatorVariableDefinition | None = None
     # является ли функция __init__ класса, если это оно, то там будет лежать имя переменной собственно экзепляра.
     is_class_init: None | str = None
+    is_bad: bool = False
 
     def __repr__(self):
         return (f'{KeyWords.Function.value} {self.name} ({', '.join(map(repr, self.parameters))}) -> '
@@ -66,6 +67,7 @@ class ControlReturn(ControlABC):
     results: list[TokenOperatorRvalueABC]
     origin: TokenOrigin
     func: 'ControlFunctionDefinition' | None = None
+    is_bad: bool = False
 
     def __repr__(self):
         return f'return {', '.join((repr(n) for n in self.results))};'
@@ -83,6 +85,7 @@ class ControlMassAssignment(ControlABC):
     right: list[TokenOperatorRvalueABC]
     origin: TokenOrigin
     processed: list['ControlMassAssignment.Inner'] = field(default_factory=list)
+    is_bad: bool = False
 
     @dataclass(slots=True)
     class Inner:
@@ -132,6 +135,7 @@ class ControlIf(ControlABC):
     block_if: ControlCodeBlock
     block_else: ControlCodeBlock
     origin: TokenOrigin
+    is_bad: bool = False
 
     def __repr__(self):
         return (
@@ -151,6 +155,7 @@ class ControlWhile(ControlABC):
     condition: TokenOperatorRvalueABC
     code_block: ControlCodeBlock
     origin: TokenOrigin
+    is_bad: bool = False
 
     def __repr__(self):
         return f'while {repr(self.condition)} \n {self.code_block}'
@@ -228,6 +233,7 @@ class ControlClass(ControlABC):
     magic_methods: dict[str, ControlFunctionDefinition] = field(default_factory=dict)
     scope: 'Scope' | None = None
     data_for_std: str | None = None
+    is_bad: bool = False
 
     def __repr__(self):
         return f'{KeyWords.Class_Definition} {self.name} {{ {{{self.instance_field}}} {self.rest}}}'
@@ -310,6 +316,7 @@ class ControlEnum(ControlABC):
     enum_var: TokenOperatorVariableDefinition | None = None # переменная с перечислением
     states_vars: list[TokenOperatorVariableDefinition] | None = None # переменные с собственно состояниями
     state_to_number: dict[str, TokenOperatorRvalueABC] = field(default_factory=dict) # для трансляции
+    is_bad: bool = False
 
     def find_var(self, name: str) -> TokenOperatorVariableDefinition | None:
         assert self.states_vars

@@ -113,12 +113,12 @@ def is_classes_operation_allowed(
 def get_common_type_binary(
         oper_type: TokenOperatorBinaryTypes,
         type1: Type, type2: Type,
-        origin: TokenOrigin) -> tuple[Type, Type]:
+        origin: TokenOrigin,
+        errors: list[SemanticError]) -> tuple[Type, Type]:
     """
     Ищет тип(если есть) к которому нужно привести оба операнда для проведения операции, также проверяет, возможно ли это.
     """
     _type1, _type2 = type1.full_type, type2.full_type
-
 
     # особая ветка логики - указатели
     if _type1.is_mod_pointer or _type2.is_mod_pointer:
@@ -127,9 +127,11 @@ def get_common_type_binary(
                 if _type1 == _type2:
                     return type1, type2
                 else:
-                    raise SemanticError(f'Сравнивать можно только указатели одинаковых типов: {type1}, {type2}', origin)
+                    errors.append(SemanticError(f'Сравнивать можно только указатели одинаковых типов: {type1}, {type2}', origin))
+                    return t_error, t_error
             else:
-                raise SemanticError('Два указателя можно только сравнить: {type1}, {type2}', origin)
+                errors.append(SemanticError(f'Два указателя можно только сравнить: {type1}, {type2}', origin))
+                return t_error, t_error
 
         if _type1.is_mod_pointer:
             pointer, integer = type1, type2
@@ -143,12 +145,14 @@ def get_common_type_binary(
                 _integer.is_simple_base and
                 _integer.simple.type in BaseTypesTypes.Integer
         ):
-            raise SemanticError(f'Указатель {pointer} можно двигать только на '
-                                f'целочисленный тип, был дан {integer}', origin)
+            errors.append(SemanticError(f'Указатель {pointer} можно двигать только на '
+                                        f'целочисленный тип, был дан {integer}', origin))
+            return t_error, t_error
 
         if oper_type not in (TokenOperatorBinaryTypes.ArfmAdd, TokenOperatorBinaryTypes.ArfmSub):
-            raise SemanticError(f'Неправильная операция: {oper_type.value.symbol}. '
-                                f'Указатель можно только двигать(суммируя или вычитая)', origin)
+            errors.append(SemanticError(f'Неправильная операция: {oper_type.value.symbol}. '
+                                        f'Указатель можно только двигать(суммируя или вычитая)', origin))
+            return t_error, t_error
 
         if _type1.is_mod_pointer:
             return type1, type2
@@ -159,6 +163,9 @@ def get_common_type_binary(
     if _type1.is_mod_usual and _type1.is_simple_class_instance and _type2.is_mod_usual and _type2.is_simple_class_instance and _type1 == _type2:
         if is_classes_operation_allowed(_type1, oper_type):
             return type1, type2
+        else:
+            errors.append(SemanticError(f'Операция {oper_type.value.symbol} не определена для классов {type1} и {type2}', origin))
+            return t_error, t_error
 
     # сравнения перечислений, можно сравнивать 2 перечисления одинакового типа
     if _type1.is_mod_usual and _type1.is_simple_enum_instance and _type2.is_mod_usual and _type2.is_simple_enum_instance and _type1 == _type2:
@@ -167,13 +174,15 @@ def get_common_type_binary(
 
     # теперь - только базовые типы без модификаторов
     if not (type1.is_mod_usual and type2.is_mod_usual and type1.is_simple_base and type2.is_simple_base):
-        raise SemanticError(f'Операция {oper_type.value.symbol} не работает с типами {type1} и {type2}', origin)
+        errors.append(SemanticError(f'Операция {oper_type.value.symbol} не работает с типами {type1} и {type2}', origin))
+        return t_error, t_error
 
     # особый случай - % только с целыми числами
     if oper_type == TokenOperatorBinaryTypes.ArfmMod:
         if is_any_float(type1, type2):
-            raise SemanticError(f'Операция {oper_type.value.symbol}  работает только '
-                                f'с целочисленными типами, были даны {type1} и {type2}', origin)
+            errors.append(SemanticError(f'Операция {oper_type.value.symbol}  работает только '
+                                        f'с целочисленными типами, были даны {type1} и {type2}', origin))
+            return t_error, t_error
         need = lead_to_int(type1, type2)
 
     # просто арифметика, если один из них флоат - то это флоат, в другом случае это целое число
@@ -186,8 +195,9 @@ def get_common_type_binary(
     # битовые операции, только целочисленное
     elif oper_type in TokenOperatorsTypes.BitwiseShifts or oper_type in TokenOperatorsTypes.Bitwise:
         if is_any_float(type1, type2):
-            raise SemanticError(f'Битовые операции работают только с целочисленными '
-                                f'типами, были даны {type1} и {type2}', origin)
+            errors.append(SemanticError(f'Битовые операции работают только с целочисленными '
+                                        f'типами, были даны {type1} и {type2}', origin))
+            return t_error, t_error
         need = lead_to_int(type1, type2)
 
     # логические, только булев
@@ -242,16 +252,20 @@ def get_magic_thing_binary(oper_type: TokenOperatorBinaryTypes, type1: Type, typ
 
 
 # ========== Префиксные ==========
-def get_common_type_prefix(oper_type: TokenOperatorPrefixTypes, type1: Type, origin: TokenOrigin) -> Type:
+def get_common_type_prefix(oper_type: TokenOperatorPrefixTypes, type1: Type, origin: TokenOrigin, errors: list[SemanticError]) -> Type:
     _type1 = type1.full_type
 
     if _type1.is_mod_usual and _type1.is_simple_class_instance:
         if is_classes_operation_allowed(_type1, oper_type):
             return type1
+        else:
+            errors.append(SemanticError(f'Операция {oper_type.value.symbol} не определена для {type1}', origin))
+            return t_error
 
     if not (_type1.is_mod_usual and _type1.is_simple_base):
-        raise SemanticError(f'Операция {oper_type.value.symbol} работает '
-                            f'только с базовыми типами без модификаторов', origin)
+        errors.append(SemanticError(f'Операция {oper_type.value.symbol} работает '
+                                    f'только с базовыми типами без модификаторов', origin))
+        return t_error
 
     t1t = _type1.simple.type
 
@@ -260,8 +274,9 @@ def get_common_type_prefix(oper_type: TokenOperatorPrefixTypes, type1: Type, ori
 
     elif oper_type in TokenOperatorsTypes.Bitwise:
         if t1t in BaseTypesTypes.Floating:
-            raise SemanticError(f'Битовые операции работают только с целочисленными '
-                                f'типами, был дан {type1}', origin)
+            errors.append(SemanticError(f'Битовые операции работают только с целочисленными '
+                                        f'типами, был дан {type1}', origin))
+            return t_error
         return type1
 
     elif oper_type in TokenOperatorsTypes.Logical:

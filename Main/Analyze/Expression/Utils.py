@@ -3,17 +3,18 @@ from typing import Protocol
 from dataclasses import dataclass
 from ....Definitions.Scopes import *
 from ....Definitions.Tokens import *
+from ....Definitions.Exceptions import SemanticError
 import random
 from functools import singledispatch
 
 
 @singledispatch
-def analyze_wvalue(node: TokenOperatorWvalueABC, scope: Scope, parent: TypeExpressionParent) -> Type:
+def analyze_wvalue(node: TokenOperatorWvalueABC, scope: Scope, parent: TypeExpressionParent, errors: list[SemanticError]) -> Type:
     raise NotImplementedError(f"analyze_wvalue не реализован для {type(node).__name__}")
 
 
 @singledispatch
-def analyze_rvalue(node: TokenOperatorRvalueABC, scope: Scope, parent: TypeExpressionParent) -> Type:
+def analyze_rvalue(node: TokenOperatorRvalueABC, scope: Scope, parent: TypeExpressionParent, errors: list[SemanticError]) -> Type:
     raise NotImplementedError(f"analyze_rvalue не реализован для {type(node).__name__}")
 
 
@@ -24,24 +25,33 @@ def cast_if_need(operand: TokenOperatorRvalueABC, type_need: Type) -> TokenOpera
     return TokenOperatorCast(type_need, operand, zero_origin)
 
 
+def err(node: TokenOperatorWvalueABC | TokenOperatorRvalueABC) -> Type:
+    """Устанавливает состояние надо на ошибку и возвращает её"""
+    node.res_type = t_error
+    return t_error
+
+
 def is_in_key_word(word: str) -> bool:
     return word in BaseTypes or word in KeyWords
 
 
-def is_free_variable_name(word: str, scope: Scope, allow_override: bool = True) -> bool:
-    if word is BaseTypes or word is KeyWords:
-        return False
-    var = scope.find_variable(word, False)
-
-
-def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin):
+def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin, errors: list[SemanticError]) -> Type:
     """Анализирует тип, проверяет и делает то что нужно."""
     # функция
     if _type.is_simple_func:
-        for t in _type.simple.arguments:
-            analyze_type(t, scope, origin)
-        for t in _type.simple.results:
-            analyze_type(t, scope, origin)
+        args = [
+            analyze_type(t, scope, origin, errors)
+            for t in _type.simple.arguments
+        ]
+        if any(t == t_error for t in args):
+            return t_error
+        res = [
+            analyze_type(t, scope, origin, errors)
+            for t in _type.simple.results
+        ]
+        if any(t == t_error for t in res):
+            return t_error
+        return Type(Type.SimpleTypeFunc(args, res), _type.modifiers, _type.origin)
     else:
         # сырое слово
         assert _type.is_simple_raw
@@ -54,7 +64,8 @@ def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin):
         # если это не он - это псевдоним или класс(возможно в классе)
         else:
             if raw_name in KeyWords or any(n in KeyWords for n in indexes):
-                raise SemanticError('Неожиданное использование ключевых слов', origin)
+                errors.append(SemanticError('Неожиданное использование ключевых слов', origin))
+                return t_error
 
             last_scope = scope
 
@@ -66,7 +77,8 @@ def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin):
                 # есть индексы, start_name - имя класса, так что перейдём в него
                 cls = last_scope.find_variable(start_name, False)
                 if not (cls is not None and cls[0].type.is_simple_class):
-                    raise SemanticError(f'Класса {start_name} нету', origin)
+                    errors.append(SemanticError(f'Класса {start_name} нету', origin))
+                    return t_error
                 cls = cls[0].type.cls
                 assert isinstance(cls, ControlClass)
                 assert cls.scope
@@ -78,7 +90,8 @@ def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin):
                     name = indexes[i]
                     class_ = last_scope.find_class_in_cur_scope(name)
                     if class_ is None:
-                        raise SemanticError(f'Имени класса "{name}" не обнаружено', origin)
+                        errors.append(SemanticError(f'Имени класса "{name}" не обнаружено', origin))
+                        return t_error
                     last_scope = last_scope.get_child_scope_from_creator(class_)
                     i += 1
 
@@ -91,27 +104,18 @@ def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin):
                         var[0].type.is_simple_class or var[0].type.is_simple_enum
                     )
                 ):
-                    raise SemanticError(f'Имени "{raw_name}" нет ни как класса, ни как псевдонима, ни как перечисления', origin)
+                    errors.append(SemanticError(f'Имени "{raw_name}" нет ни как класса, ни как псевдонима, '
+                                                'ни как перечисления для использования как типа', origin))
+                    return t_error
 
                 var = var[0]
                 if var.type.is_simple_class:
                     cls = var.type.cls
-                    _type.simple = Type.SimpleTypeClassInstance(cls)
+                    simple = Type.SimpleTypeClassInstance(cls)
                 else:
                     enum = var.type.enum
-                    _type.simple = Type.SimpleTypeEnumInstance(enum)
+                    simple = Type.SimpleTypeEnumInstance(enum)
             else:
-                _type.simple = Type.SimpleTypeTypedef(typedef.typedef, typedef.typedef.conj(_type.modifiers))
+                simple = Type.SimpleTypeTypedef(typedef.typedef, typedef.typedef.conj(_type.modifiers))
 
-
-
-
-
-
-
-
-
-    pass
-
-
-
+            return Type(simple, _type.modifiers, _type.origin)

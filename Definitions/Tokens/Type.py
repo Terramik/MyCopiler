@@ -453,6 +453,9 @@ class ErrorType(Type):
     def __init__(self, origin: TokenOrigin | None):
         self.origin = origin
 
+    def __eq__(self, other):
+        return isinstance(other, ErrorType)
+
 
 t_bool = Type(Type.SimpleTypeBase(BaseTypes.bool), [])
-t_error = ErrorType(zero_origin)
+t_error = ErrorType()
