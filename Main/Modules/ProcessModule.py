@@ -10,7 +10,7 @@ from ...Definitions.Exceptions import OurSyntaxError, SemanticError
 from ..Analyze import analyze
 
 
-def get_module(path: Path, import_origin: TokenOrigin) -> tuple[Module, list[OurSyntaxError]]:
+def get_module(path: Path, import_origin: TokenOrigin) -> Module:
     """
     Читает модуль по пути, обрабатывает его до стадии обработки сырых конструкций
     """
@@ -33,15 +33,18 @@ def get_module(path: Path, import_origin: TokenOrigin) -> tuple[Module, list[Our
         with open(path, 'r', encoding='utf-8') as f:
             raw_tokens = tokenize_file(f, path)
             raw_code, err = collapse_raw(raw_tokens)
-            code = process_raw(raw_code)
+            code, err2 = process_raw(raw_code)
+        err = err + err2
 
         # готово
         return Module(
-            Module.Types.Usual, path, code
-        ), err
+            Module.Types.Usual, path, code, errors=err
+        )
 
 
-def process_module(module: Module, processed_modules: dict[Path, Module], ignore_main: bool = False) -> list[OurSyntaxError | SemanticError]:
+def process_module(module: Module, processed_modules: dict[Path, Module], ignore_main: bool = False):
+    errors = module.errors
+
     # стандартные не трогаем
     if module.type == Module.Types.Standard:
         return
@@ -61,7 +64,7 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
     processed: set[Path] = set()
     paths = set()
     modules = []
-    errors = []
+
     for imp in imports_:
         path = (module.path_to_file / imp.path).with_suffix('.mylang').resolve()
         if path not in paths:
@@ -72,9 +75,8 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
                 modules.append(processed_modules[path])
             else:
                 paths.add(path)
-                mod, err = get_module(path, imp.origin)
+                mod = get_module(path, imp.origin)
                 modules.append(mod)
-                errors.extend(err)
 
     module.imported_modules = modules
 
@@ -95,7 +97,8 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
         if imp.all:
             for exported in mod.export_:
                 if exported.alias in imported_names:
-                    raise SemanticError(f'Имя {exported.alias} уже занято', imp.origin)
+                    errors.append(SemanticError(f'Имя {exported.alias} уже занято', imp.origin))
+                    continue
                 # копируем
                 if isinstance(exported.thing, TokenOperatorVariableDefinition):
                     thing = TokenOperatorVariableDefinition(exported.alias, exported.thing.type, exported.thing.origin)
@@ -112,9 +115,9 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
             exported = mod.find_export(name)
             # проверка
             if exported is None:
-                raise SemanticError(f'Имя {name} не обнаружено', imp.origin)
+                errors.append(SemanticError(f'Имени {name} не обнаружено в импортируемом модуле', imp.origin))
             if alias in imported_names:
-                raise SemanticError(f'Имя {alias} уже занято', imp.origin)
+                errors.append(SemanticError(f'Имя {alias} уже занято', imp.origin))
             # копируем, добавляем псевдоним
             if isinstance(exported.thing, TokenOperatorVariableDefinition):
                 thing = TokenOperatorVariableDefinition(alias, exported.thing.type, exported.thing.origin)
@@ -130,16 +133,16 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
 
     # добавляем штуки и анализируем
     to_add = [i.thing for i in imported]
-    module.scope = analyze(module.code, to_add)
+    module.scope, err = analyze(module.code, to_add)
+    module.errors.extend(err)
 
     # проверка на присутствие точки входа
     if not ignore_main:
         if module.type == Module.Types.Usual and module.scope.find_function_in_cur_scope('main') is not None:
-            raise SemanticError('Точка входа вне основного модуля',
-                                module.scope.find_function_in_cur_scope('main').origin)
+            errors.append(SemanticError('Точка входа вне основного модуля',
+                                        module.scope.find_function_in_cur_scope('main').origin))
         elif module.type == Module.Types.Main and module.scope.find_function_in_cur_scope('main') is None:
-            raise SemanticError('Точки входа не обнаружено', module.code.origin)
-
+            errors.append(SemanticError('Точки входа не обнаружено', module.code.origin))
 
     # теперь экспорт
     exported = []
@@ -151,14 +154,16 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
         if exp.all:
             for var in module.scope.variables:
                 if var.name in exported_names:
-                    raise SemanticError(f'Име {var.name} уже занято', exp.origin)
+                    errors.append(SemanticError(f'Име {var.name} уже занято', exp.origin))
+                    continue
                 exported.append(Module.ExportData(
                     var, var.name
                 ))
                 exported_names.add(var.name)
             for typedef in module.scope.typedefs:
                 if typedef.typedef.name in exported_names:
-                    raise SemanticError(f'Име {typedef.typedef.name} уже занято', exp.origin)
+                    errors.append(SemanticError(f'Име {typedef.typedef.name} уже занято', exp.origin))
+                    continue
                 exported.append(Module.ExportData(
                     typedef, typedef.typedef.name
                 ))
@@ -167,7 +172,8 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
 
         for name, alias in exp.names:
             if alias in exported_names:
-                raise SemanticError(f'Имя {alias} уже занято', exp.origin)
+                errors.append(SemanticError(f'Имя {alias} уже занято', exp.origin))
+                continue
             thing = module.scope.find_variable_in_cur_scope(name) # это даст и функции, и классы, т.к. они переменные.
             if thing:
                 exported.append(Module.ExportData(
@@ -180,7 +186,8 @@ def process_module(module: Module, processed_modules: dict[Path, Module], ignore
                         thing, alias
                     ))
                 else:
-                    SemanticError(f'Имени {name} не было найдено', exp.origin)
+                    errors.append(SemanticError(f'Имени {name} не было найдено', exp.origin))
+                    continue
             exported_names.add(alias)
 
     module.export_ = exported

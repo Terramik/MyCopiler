@@ -72,3 +72,9 @@ def _(node: TokenOperatorFieldAccess, scope: Scope, parent: TypeExpressionParent
 @analyze_wvalue.register(TokenOperatorFieldAccessPointer)
 def _(node: TokenOperatorFieldAccessPointer, scope: Scope, parent: TypeExpressionParent, errors: list[SemanticError]) -> Type:
     return analyze_rvalue(node, scope, parent, errors)
+
+
+@analyze_wvalue.register(TokenOperatorError)
+def _(node: TokenOperatorError, scope: Scope, parent: TypeExpressionParent, errors: list[SemanticError]) -> Type:
+    return t_error
+

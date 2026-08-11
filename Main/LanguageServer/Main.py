@@ -18,7 +18,6 @@ class OurLanguageServer(LanguageServer):
         with open(p, 'w') as f:
             f.write('START\n')
         self.processed_modules: dict[Path, Module] = {}
-        self.is_mod_good: dict[Path, bool] = {}
         super().__init__(*args, **kwargs)
         with open(p, 'a') as f:
             f.write('START ENDED\n')
@@ -50,25 +49,20 @@ class OurLanguageServer(LanguageServer):
         return TextPosition(position.line, position.character)
 
     def analyze_module(self, path: Path):
-        is_bad, err = analyze_module(path, self.processed_modules)
-        if is_bad:
-            self.text_document_publish_diagnostics(
-                types.PublishDiagnosticsParams(
-                    path.as_uri(), [types.Diagnostic(
+        module = analyze_module(path, self.processed_modules)
+
+        self.text_document_publish_diagnostics(
+            types.PublishDiagnosticsParams(
+                path.as_uri(), [
+                    types.Diagnostic(
                         range=self.token_origin_to_pygls_range(err.position),
                         message=err.args[0],
                         severity=types.DiagnosticSeverity.Error
-                    )]
-                )
+                    )
+                    for err in module.errors
+                ]
             )
-            self.is_mod_good[path] = False
-        else:
-            self.text_document_publish_diagnostics(
-                types.PublishDiagnosticsParams(
-                    path.as_uri(), []
-                )
-            )
-            self.is_mod_good[path] = True
+        )
 
 
 server = OurLanguageServer('MyLangLS', 'v0.1')
@@ -113,8 +107,8 @@ def did_change(ls: OurLanguageServer, params: types.DidChangeTextDocumentParams)
 def goto_definition(ls: OurLanguageServer, params: types.DefinitionParams):
     path = ls.uri_to_path(params.text_document.uri)
 
-    if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
-        return None
+    assert path in ls.processed_modules
+
     mod = ls.processed_modules.get(path)
 
     tok = position_to_node(
@@ -149,7 +143,9 @@ def goto_definition(ls: OurLanguageServer, params: types.DefinitionParams):
 
 
 def type_to_hover_hint(type: Type) -> str:
-    if type.is_simple_func:
+    if isinstance(type, ErrorType):
+        return '**error**'
+    elif type.is_simple_func:
         return f'func ({
         ', '.join(map(type_to_hover_hint, type.simple.arguments))
         }) -> ({
@@ -165,8 +161,8 @@ def hover(ls: OurLanguageServer, params: types.HoverParams):
     # ищём штуку
     path = ls.uri_to_path(params.text_document.uri)
 
-    if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
-        return None
+    assert path in ls.processed_modules
+
     mod = ls.processed_modules.get(path)
 
     tok = position_to_node(
@@ -204,8 +200,8 @@ def semantic_tokens_full(ls: OurLanguageServer, params: types.SemanticTokensPara
     # путь и модуль
     path = ls.uri_to_path(params.text_document.uri)
 
-    if not (path in ls.is_mod_good and ls.is_mod_good.get(path)):
-        return None
+    assert path in ls.processed_modules
+
     mod = ls.processed_modules.get(path)
 
     data = sematic_print(mod)

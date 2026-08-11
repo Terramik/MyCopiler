@@ -716,3 +716,6 @@ def _(node: TokenOperatorDeInitializer, scope: Scope, parent: TypeExpressionPare
     return operand_type
 
 
+@analyze_rvalue.register(TokenOperatorError)
+def _(node: TokenOperatorError, scope: Scope, parent: TypeExpressionParent, errors: list[SemanticError]) -> Type:
+    return t_error

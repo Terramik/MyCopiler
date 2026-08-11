@@ -1,5 +1,6 @@
 from __future__ import annotations
 from .Tokens import ControlCodeBlock, TokenOperatorVariableDefinition, ControlTypedef, Type
+from .Exceptions import OurSyntaxError, SemanticError
 from .Scopes import Scope
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -19,6 +20,7 @@ class Module:
     type: Module.Types
     path_to_file: Path
     code: ControlCodeBlock
+    errors: list[OurSyntaxError | SemanticError] = field(default_factory=lambda: [])
     scope: Scope | None = None
     fully_processed: bool = False
     imported_modules: list[Module] = field(default_factory=lambda: [])

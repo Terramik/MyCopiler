@@ -65,17 +65,13 @@ match args.command:
             raise ValueError(f'Выходной путь {result_path.as_posix()} не должен иметь расширения')
 
         # сама компиляция
-        try:
-            the_module = make_modules(file_path)
-        except OurSyntaxError as err:
-            print_error_location(err.position)
-            print(err)
-        except SemanticError as err:
-            print_error_location(err.position)
-            print(err)
-            # raise err
-        else:
+        the_module, errors = make_modules(file_path)
+        if not errors:
             transfer_to_c(the_module, result_path, args.compiler)
+        else:
+            print(errors)
+            for err in errors:
+                print_error_location(err.position)
 
     case 'retransfer_std_modules':
         retransfer_str_modules(args.compiler)

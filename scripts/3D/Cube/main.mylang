@@ -12,7 +12,7 @@ class Pixsel {
     }
 
     def __init__(self Pixsel, symbol int8, dist float64) -> (Pixsel) {
-        self.symbol = symbol; 
+        self.symbol = symbol;
         self.dist = dist;
         return self;
     }
