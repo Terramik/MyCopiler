@@ -16,8 +16,12 @@ from io import StringIO
 
 def parse_and_analyze(code: str):
     """Утилита: токенизирует, сворачивает, обрабатывает и анализирует код."""
-    block = process_raw(collapse_raw(tokenize_file(StringIO(code), zero_origin.file)))
-    scope = analyze(block)
+    raw, err = collapse_raw(tokenize_file(StringIO(code), zero_origin.file))
+    block, err2 = process_raw(raw)
+    scope, err3 = analyze(block)
+    assert not err
+    assert not err2
+    assert not err3
     return block, scope
 
 

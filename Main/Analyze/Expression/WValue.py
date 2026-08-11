@@ -16,7 +16,8 @@ def _(node: TokenOperatorVariableDefinition, scope: Scope, parent: TypeExpressio
         scope.add_variable(node)
         return node.type
     # в случае ошибки
-    return err(node)
+    node.type = t_error
+    return t_error
 
 
 @analyze_wvalue.register(TokenVariableAccess)

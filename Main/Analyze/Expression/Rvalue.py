@@ -41,6 +41,8 @@ def _(node: TokenOperatorAssignment, scope: Scope, parent: TypeExpressionParent,
     if type_have == t_error or type_need == t_error:
         return err(node)
 
+    assert type_need
+
     if type_have != type_need and not type_have.is_castable_implicitly(type_need):
         errors.append(SemanticError(
             f'Тип {type_have} не может быть неявно приведён к типу {type_need} для присваивания.',

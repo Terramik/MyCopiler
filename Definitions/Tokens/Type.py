@@ -369,12 +369,11 @@ class Type:
 
         if _self.is_mod_usual and cast_to.is_mod_usual:
             if _self.is_simple_base and cast_to.is_simple_base:
-                if _self._simple.type in BaseTypesTypes.Numeric and cast_to.simple.type in BaseTypesTypes.Numeric:
+                if _self.simple.type in BaseTypesTypes.Numeric and cast_to.simple.type in BaseTypesTypes.Numeric:
                     return True
             # класс с __bool__ можно неявно преобразовать
             if _self.is_simple_class_instance and cast_to == t_bool and _self.cls.is_bool:
                 return True
-
         return False
 
     def is_castable_explicitly(self, cast_to: Type) -> bool:
@@ -456,6 +455,9 @@ class ErrorType(Type):
     def __eq__(self, other):
         return isinstance(other, ErrorType)
 
+    def __repr__(self):
+        return 'error_type'
+
 
 t_bool = Type(Type.SimpleTypeBase(BaseTypes.bool), [])
-t_error = ErrorType()
+t_error = ErrorType(zero_origin)

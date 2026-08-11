@@ -60,7 +60,7 @@ def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin, errors: list[Se
 
         # просто базовый тип
         if raw_name in BaseTypes:
-            _type.simple = Type.SimpleTypeBase(BaseTypes(raw_name))
+            simple = Type.SimpleTypeBase(BaseTypes(raw_name))
         # если это не он - это псевдоним или класс(возможно в классе)
         else:
             if raw_name in KeyWords or any(n in KeyWords for n in indexes):
@@ -118,4 +118,4 @@ def analyze_type(_type: Type, scope: Scope, origin: TokenOrigin, errors: list[Se
             else:
                 simple = Type.SimpleTypeTypedef(typedef.typedef, typedef.typedef.conj(_type.modifiers))
 
-            return Type(simple, _type.modifiers, _type.origin)
+        return Type(simple, _type.modifiers, _type.origin)

@@ -50,18 +50,19 @@ def analyze_return(scope: Scope, ret: ControlReturn, errors: list[SemanticError]
 
     func = func_scope.creator
     if len(func.results) != len(ret.results):
-        errors.append(SemanticError('количество аргументов в return не соответствуют количеству результатов функции', ret.origin))
+        errors.append(SemanticError('Количество аргументов в return не соответствуют количеству результатов функции', ret.origin))
         for r in ret.results: analyze_rvalue(r, scope, ret, errors)
         ret.is_bad = True
         return
 
     for i, t_need, t_have in (
-        ((i, func.results[i], analyze_rvalue(ret.results[i], scope, ret)) for i in range(len(func.results)))
+        ((i, func.results[i], analyze_rvalue(ret.results[i], scope, ret, errors)) for i in range(len(func.results)))
     ):
         if t_have == t_error:
             continue
         if t_need != t_have:
             _is = t_have.is_castable_implicitly(t_need)
+
             if not _is:
                 errors.append(SemanticError(f'Тип {t_have} неприводим к типу {t_need} для возвращения из '
                                             f'функции как {i} результат', ret.results[i].origin))
@@ -228,8 +229,10 @@ def analyze_function(scope: Scope, func: ControlFunctionDefinition, errors: list
         analyze_wvalue(par, child_scope, func, errors)
         child_scope.add_variable(par)
 
-    for t in func.results:
+    func.results = [
         analyze_type(t, scope, t.origin, errors)
+        for t in func.results
+    ]
 
     if any(par.res_type == t_error for par in func.parameters) or any(t == t_error for t in func.results):
         error_occured = True
