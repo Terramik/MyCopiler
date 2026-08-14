@@ -144,7 +144,7 @@ def goto_definition(ls: OurLanguageServer, params: types.DefinitionParams):
 
 def type_to_hover_hint(type: Type) -> str:
     if isinstance(type, ErrorType):
-        return '**error**'
+        return '**error type**'
     elif type.is_simple_func:
         return f'func ({
         ', '.join(map(type_to_hover_hint, type.simple.arguments))

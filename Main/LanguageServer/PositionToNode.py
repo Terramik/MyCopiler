@@ -14,46 +14,27 @@ ResNode = TokenOperatorRvalueABC | TokenOperatorWvalueABC | ControlABC | Type | 
 class ItExpr():
     def __call__(self, node: RWValue, pos: TextPosition) -> ResNode:
         match node:
-            case TokenOperatorVariableDefinition():
-                return self.on_var_def(node, pos)
-            case TokenVariableAccess():
-                return self.on_var_access(node, pos)
-            case TokenLiteral():
-                return self.on_literal(node, pos)
-            case TokenOperatorAssignment():
-                return self.on_assignment(node, pos)
-            case TokenOperatorFunctionCall():
-                return self.on_f_call(node, pos)
-            case TokenOperatorBinary():
-                return self.on_binary(node, pos)
-            case TokenOperatorPrefix():
-                return self.on_prefix(node, pos)
-            case TokenOperatorPostfix():
-                return self.on_postfix(node, pos)
-            case TokenOperatorCast():
-                return self.on_cast(node, pos)
-            case TokenOperatorSizeof():
-                return self.on_sizeof(node, pos)
-            case TokenOperatorLenof():
-                return self.on_lenof(node, pos)
-            case TokenOperatorSlize():
-                return self.on_slize(node, pos)
-            case TokenOperatorIndex():
-                return self.on_index(node, pos)
-            case TokenOperatorArrayCreation():
-                return self.on_array_creation(node, pos)
-            case TokenOperatorReferencing():
-                return self.on_referencing(node, pos)
-            case TokenOperatorDereferencing():
-                return self.on_dereferencing(node, pos)
-            case TokenOperatorFieldAccess():
-                return self.on_field_access(node, pos)
-            case TokenOperatorFieldAccessPointer():
-                return self.on_field_access_pointer(node, pos)
-            case TokenOperatorDeInitializer():
-                return self.on_deinitializer(node, pos)
-            case _:
-                raise NotImplementedError('Что-то пошло не так')
+            case TokenOperatorVariableDefinition(): return self.on_var_def(node, pos)
+            case TokenVariableAccess(): return self.on_var_access(node, pos)
+            case TokenLiteral(): return self.on_literal(node, pos)
+            case TokenOperatorAssignment(): return self.on_assignment(node, pos)
+            case TokenOperatorFunctionCall(): return self.on_f_call(node, pos)
+            case TokenOperatorBinary(): return self.on_binary(node, pos)
+            case TokenOperatorPrefix(): return self.on_prefix(node, pos)
+            case TokenOperatorPostfix(): return self.on_postfix(node, pos)
+            case TokenOperatorCast(): return self.on_cast(node, pos)
+            case TokenOperatorSizeof(): return self.on_sizeof(node, pos)
+            case TokenOperatorLenof(): return self.on_lenof(node, pos)
+            case TokenOperatorSlize(): return self.on_slize(node, pos)
+            case TokenOperatorIndex(): return self.on_index(node, pos)
+            case TokenOperatorArrayCreation(): return self.on_array_creation(node, pos)
+            case TokenOperatorReferencing(): return self.on_referencing(node, pos)
+            case TokenOperatorDereferencing(): return self.on_dereferencing(node, pos)
+            case TokenOperatorFieldAccess(): return self.on_field_access(node, pos)
+            case TokenOperatorFieldAccessPointer(): return self.on_field_access_pointer(node, pos)
+            case TokenOperatorDeInitializer(): return self.on_deinitializer(node, pos)
+            case TokenOperatorError(): return self.on_error_node(node, pos)
+            case _: raise NotImplementedError('Что-то пошло не так')
 
     # методы для всего
 
@@ -151,6 +132,10 @@ class ItExpr():
     def on_deinitializer(self, node: TokenOperatorDeInitializer, pos: TextPosition) -> ResNode:
         if pos in node.origin: return node
         return self(node.operand, pos)
+
+    def on_error_node(self, err: TokenOperatorError, pos: TextPosition):
+        if pos in err.origin:
+            return err
 
 
 it_expr = ItExpr()
@@ -262,6 +247,7 @@ class ItCont():
     def on_enum(self, enum: ControlEnum, pos: TextPosition) -> ResNode:
         if pos in enum.origin:
             return enum
+
 
 
 it_cont = ItCont()

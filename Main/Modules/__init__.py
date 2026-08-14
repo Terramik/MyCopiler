@@ -19,6 +19,8 @@ class ItMod(IteratorModule):
             return
         self.processed.add(module.path_to_file)
         self.errors.extend(module.errors)
+        super().on_module(module)
+
 
 
 def make_modules(

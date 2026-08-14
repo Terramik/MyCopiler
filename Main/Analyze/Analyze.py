@@ -49,6 +49,12 @@ def analyze_return(scope: Scope, ret: ControlReturn, errors: list[SemanticError]
         return
 
     func = func_scope.creator
+
+    if func.is_bad:
+        for r in ret.results: analyze_rvalue(r, scope, ret, errors)
+        ret.is_bad = True
+        return
+
     if len(func.results) != len(ret.results):
         errors.append(SemanticError('Количество аргументов в return не соответствуют количеству результатов функции', ret.origin))
         for r in ret.results: analyze_rvalue(r, scope, ret, errors)

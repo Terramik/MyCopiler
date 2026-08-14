@@ -26,6 +26,7 @@ class IteratorExpression(ABC):
             case TokenOperatorFieldAccess(): self.on_field_access(node, parent)
             case TokenOperatorFieldAccessPointer(): self.on_field_access_pointer(node, parent)
             case TokenOperatorDeInitializer(): self.on_deinitializer(node, parent)
+            case TokenOperatorError(): self.on_error_node(node, parent)
             case _:
                 raise NotImplementedError('Что-то пошло не так')
         
@@ -97,3 +98,6 @@ class IteratorExpression(ABC):
 
     def on_deinitializer(self, node: TokenOperatorDeInitializer, parent: TypeExpressionParent):
         self(node.operand, node)
+
+    def on_error_node(self, node: TokenOperatorError, parent: TypeExpressionParent):
+        pass

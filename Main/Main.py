@@ -66,12 +66,13 @@ match args.command:
 
         # сама компиляция
         the_module, errors = make_modules(file_path)
+
         if not errors:
             transfer_to_c(the_module, result_path, args.compiler)
         else:
-            print(errors)
-            for err in errors:
+            for err in errors[::-1]:
                 print_error_location(err.position)
+                print(err.args[0])
 
     case 'retransfer_std_modules':
         retransfer_str_modules(args.compiler)
