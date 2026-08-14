@@ -17,8 +17,12 @@ class ItScope(IteratorScope):
     # собирает все классы с __del__
     def on_scope(self, scope: Scope):
         for var in scope.variables:
+            if var.type == t_error:
+                continue
             if var.type.is_simple_class:
                 cls = var.type.cls
+                if cls.is_bad:
+                    continue
                 del_ = cls.find_class_field('__del__')
                 if del_ is not None:
                     self.classes_with_del.append(cls)
@@ -27,6 +31,7 @@ class ItScope(IteratorScope):
 
 class ItExpr(IteratorExpression):
     counter = 1
+
     def __init__(self, classes_with_del: list[ControlClass], scope: Scope, code: ControlCodeBlock, index: int):
         self.classes_with_del = classes_with_del
         self.scope = scope
@@ -41,7 +46,8 @@ class ItExpr(IteratorExpression):
                 return True
         return False
 
-    def is_simple_or_array(self, t: Type):
+    @staticmethod
+    def is_simple_or_array(t: Type):
         while t.is_mod_array:
             t = t.without_one_modifier()
         return t.is_mod_usual
@@ -54,6 +60,9 @@ class ItExpr(IteratorExpression):
     def on_f_call(self, node: TokenOperatorFunctionCall, parent: TypeExpressionParent):
         # в обратном порядке
         super().on_f_call(node, parent)
+
+        if node.res_type == t_error:
+            return
 
         # экземпляры могут делать только функции
         # если эта функция возвращает экземпляр класса с __del__
@@ -183,6 +192,7 @@ class ItCont(IteratorControl):
             self.scopes[-1].get_child_scope_from_creator(func_def)
         )
         self.on_code_block(func_def.code_block, False)
+
 
 def add_del_to_temporary_objects(code: ControlCodeBlock, scope: Scope):
     it_scope = ItScope()

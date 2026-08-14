@@ -13,5 +13,4 @@ var RAND_SEED uint64 = now();
 
 export all;
 
-var blob MyClass;
 

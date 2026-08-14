@@ -12,19 +12,21 @@ __all__ = ('replace_access_to_class_fields_from_instances_to_direct_access',)
 
 
 class ItExpr(IteratorExpression):
-    def on_f_call(self, node: TokenOperatorFunctionCall, parent: TypeExpressionParent):
-        super().on_f_call(node, parent)
-
-
     def on_field_access(self, node: TokenOperatorFieldAccess, parent: TypeExpressionParent):
         # в обратном порядке
         super().on_field_access(node, parent)
+
+        if node.res_type == t_error:
+            return
 
         operand = node.operand
         # оно должно быть экземпляром
         if operand.res_type.is_simple_class_instance:
             cls = operand.res_type.cls
             assert isinstance(cls, ControlClass)
+            if cls.is_bad:
+                return
+
             # мы не нашли поля в экзепляре - значит оно из класса
             if cls.find_instance_field(node.name) is None:
                 # заменим операнд на обращение к переменной класса
@@ -36,10 +38,16 @@ class ItExpr(IteratorExpression):
         # в обратном порядке
         super().on_field_access(node, parent)
 
+        if node.res_type == t_error:
+            return
+        
         operand = node.operand
         if operand.res_type.is_simple_class_instance:
             cls = operand.res_type.cls
             assert isinstance(cls, ControlClass)
+            if cls.is_bad:
+                return
+
             if cls.find_instance_field(node.name) is None:
                 # заменим операнд на обращение к переменной класса
                 new_operand = TokenVariableAccess(cls.name, operand.origin, False, cls.class_var)

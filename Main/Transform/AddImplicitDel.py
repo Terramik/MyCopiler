@@ -33,12 +33,18 @@ class ItExpr(IteratorExpression):
         self.vars_states = vars_states
 
     def on_var_def(self, node: TokenOperatorVariableDefinition, parent: TypeExpressionParent):
+        if node.res_type == t_error:
+            return
+
         if is_type_class_instance(node.type, self.classes_with_del):
             self.vars_states.append((node, False))
 
     def on_assignment(self, node: TokenOperatorAssignment, parent: TypeExpressionParent):
         # проходимся в обратном порядке
         super().on_assignment(node, parent)
+        if node.res_type == t_error:
+            return
+
         # если мы записываем в переменную, то обновляем её, что там теперь что-то есть.
         if isinstance(node.left, TokenVariableAccess | TokenOperatorVariableDefinition):
             var = node.left.var_def if isinstance(node.left, TokenVariableAccess) else node.left
@@ -50,6 +56,9 @@ class ItExpr(IteratorExpression):
     def on_deinitializer(self, node: TokenOperatorDeInitializer, parent: TypeExpressionParent):
         # и тут тоже
         super().on_deinitializer(node, parent)
+        if node.res_type == t_error:
+            return
+
         # если мы де инициализируем, то мы де инициализируем
         if isinstance(node.operand, TokenVariableAccess):
             var = node.operand.var_def
@@ -144,7 +153,6 @@ class ItCont(IteratorControl):
                             break
 
 
-
 class ItScope(IteratorScope):
     def __init__(self):
         self.classes_with_del = []
@@ -152,8 +160,13 @@ class ItScope(IteratorScope):
     # собирает все классы с __del__
     def on_scope(self, scope: Scope):
         for var in scope.variables:
+            if var.type == t_error:
+                continue
+
             if var.type.is_simple_class:
                 cls = var.type.cls
+                if cls.is_bad:
+                    continue
                 del_ = cls.find_class_field('__del__')
                 if del_ is not None:
                     self.classes_with_del.append(cls)

@@ -18,12 +18,18 @@ class ItCont(IteratorControlWithScope):
     def on_expression_control(self, expr: ControlExpression):
         # начинаем
         if isinstance(expr.first, TokenOperatorDeInitializer):
+            if expr.first.res_type == t_error:
+                return
+
             thing_to_del = expr.first.operand
             type_to_del = thing_to_del.res_type
             cls = type_to_del.cls
             del_origin = expr.first.origin
 
             assert isinstance(cls, ControlClass)
+            if cls.is_bad:
+                return
+
             if type_to_del.is_mod_usual or type_to_del.is_mod_pointer:
                 # это просто Class*, разыменуем
                 if type_to_del.is_mod_pointer:

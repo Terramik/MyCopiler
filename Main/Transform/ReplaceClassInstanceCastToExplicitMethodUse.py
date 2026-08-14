@@ -8,17 +8,21 @@ from ...Definitions.Tokens import *
 """
 
 
-
-
 class ItExpr(IteratorExpression):
     def on_f_call(self, node: TokenOperatorFunctionCall, parent: TypeExpressionParent):
         super().on_f_call(node, parent)
 
     def on_cast(self, node: TokenOperatorCast, parent: TypeExpressionParent):
+        if node.res_type == t_error or node.operand.res_type == t_error:
+            return
         if node.operand.res_type.is_simple_class_instance and node.operand.res_type.is_mod_usual:
             assert node.cast_type == t_bool
             cls = node.operand.res_type.cls
+
             assert isinstance(cls, ControlClass)
+            if cls.is_bad:
+                return
+
             # заменим obj as bool на Cls.__bool__(obj)
             new_node = TokenOperatorFunctionCall(
                 TokenOperatorFieldAccess(
