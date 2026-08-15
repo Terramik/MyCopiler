@@ -625,7 +625,7 @@ def _(node: TokenOperatorFieldAccess, scope: Scope, parent: TypeExpressionParent
         enum: ControlEnum = _type_operand.enum
         status = enum.find_var(node.name)
         if status is None:
-            errors.append(SemanticError(f'Статуса и именем "{node.name}" не обнаружено.', node.origin))
+            errors.append(SemanticError(f'Статуса c именем "{node.name}" не обнаружено.', node.origin))
             return err(node)
         node.res_type = status.type
         node.field = status

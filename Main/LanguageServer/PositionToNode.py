@@ -144,32 +144,19 @@ it_expr = ItExpr()
 class ItCont():
     def __call__(self, control: ControlABC, pos: TextPosition) -> ResNode:
         match control:
-            case ControlCodeBlock():
-                return self.on_code_block(control, pos)
-            case ControlFunctionDefinition():
-                return self.on_func_def(control, pos)
-            case ControlExpression():
-                return self.on_expression_control(control, pos)
-            case ControlReturn():
-                return self.on_return(control, pos)
-            case ControlMassAssignment():
-                return self.on_mass_assignment(control, pos)
-            case ControlIf():
-                return self.on_if(control, pos)
-            case ControlWhile():
-                return self.on_while(control, pos)
-            case ControlCycleControl():
-                return self.on_cycle_control(control, pos)
-            case ControlTypedef():
-                return self.on_typedef(control, pos)
-            case ControlImport():
-                return self.on_import(control, pos)
-            case ControlExport():
-                return self.on_export(control, pos)
-            case ControlClass():
-                return self.on_class(control, pos)
-            case ControlEnum():
-                return self.on_enum(control, pos)
+            case ControlCodeBlock(): return self.on_code_block(control, pos)
+            case ControlFunctionDefinition(): return self.on_func_def(control, pos)
+            case ControlExpression(): return self.on_expression_control(control, pos)
+            case ControlReturn(): return self.on_return(control, pos)
+            case ControlMassAssignment(): return self.on_mass_assignment(control, pos)
+            case ControlIf(): return self.on_if(control, pos)
+            case ControlWhile(): return self.on_while(control, pos)
+            case ControlCycleControl(): return self.on_cycle_control(control, pos)
+            case ControlTypedef(): return self.on_typedef(control, pos)
+            case ControlImport(): return self.on_import(control, pos)
+            case ControlExport(): return self.on_export(control, pos)
+            case ControlClass(): return self.on_class(control, pos)
+            case ControlEnum(): return self.on_enum(control, pos)
 
     def on_expr(self, exp: TokenOperatorWvalueABC | TokenOperatorRvalueABC, pos: TextPosition) -> ResNode:
         return it_expr(exp, pos)
@@ -249,22 +236,108 @@ class ItCont():
             return enum
 
 
-
 it_cont = ItCont()
 
 
-class ItContScopes(IteratorControlWithScope):
-    ...
+class ItContScopes(ItCont):
+    def __init__(self):
+        self.scopes: list[Scope] = []
+        self.last_scope: Scope | None = None
+
+    @property
+    def current_scope(self) -> Scope:
+        return self.scopes[-1]
+
+    def enter_scope(self, creator):
+        self.scopes.append(
+            self.current_scope.get_child_scope_from_creator(creator)
+        )
+        self.last_scope = self.current_scope  # костылииииииии
+
+    def exit_scope(self):
+        self.scopes.pop()
+
+    def start(self, code: ControlCodeBlock, scope: Scope, pos: TextPosition) -> tuple[ResNode, Scope]:
+        self.scopes.append(scope)
+        self.last_scope = scope
+        return self(code, pos), self.last_scope
+
+    def __call__(self, control: ControlABC, pos: TextPosition, add_to_f: bool = False) -> ResNode:
+        match control:
+            case ControlCodeBlock(): return self.on_code_block(control, pos, add_to_f)
+            case ControlFunctionDefinition(): return self.on_func_def(control, pos)
+            case ControlExpression(): return self.on_expression_control(control, pos)
+            case ControlReturn(): return self.on_return(control, pos)
+            case ControlMassAssignment(): return self.on_mass_assignment(control, pos)
+            case ControlIf(): return self.on_if(control, pos)
+            case ControlWhile(): return self.on_while(control, pos)
+            case ControlCycleControl(): return self.on_cycle_control(control, pos)
+            case ControlTypedef(): return self.on_typedef(control, pos)
+            case ControlImport(): return self.on_import(control, pos)
+            case ControlExport(): return self.on_export(control, pos)
+            case ControlClass(): return self.on_class(control, pos)
+            case ControlEnum(): return self.on_enum(control, pos)
+
+    def on_code_block(self, code: ControlCodeBlock, pos: TextPosition, add_scope: bool = False) -> ResNode:
+        if pos not in code.origin: return None
+        if add_scope:
+            self.enter_scope(code)
+        for control in code.block_parts:
+            control = self(control, pos, True)
+            if control is not None: return control
+        if add_scope:
+            self.exit_scope()
+
+    def on_func_def(self, func_def: ControlFunctionDefinition, pos: TextPosition) -> ResNode:
+        if pos in func_def.origin:
+            for param in func_def.parameters:
+                if pos in param.origin:
+                    return param
+                if pos in param.type.origin:
+                    return param.type
+            for res in func_def.results:
+                if pos in res.origin: return res
+            return func_def
+
+        self.enter_scope(func_def)
+        inn = self(func_def.code_block, pos)
+        self.exit_scope()
+        return inn
+
+    def on_if(self, cond: ControlIf, pos: TextPosition) -> ResNode:
+        if pos in cond.origin:
+            return self.on_expr(cond.condition, pos)
+        self.enter_scope((cond, cond.block_if))
+        if_ = self(cond.block_if, pos)
+        self.exit_scope()
+        if if_ is not None: return if_
+        self.enter_scope((cond, cond.block_else))
+        else_ = self(cond.block_else, pos)
+        self.exit_scope()
+        return else_
+
+    def on_while(self, while_: ControlWhile, pos: TextPosition) -> ResNode:
+        if pos in while_.origin:
+            return self.on_expr(while_.condition, pos)
+        self.enter_scope(while_)
+        inn = self(while_.code_block, pos)
+        self.exit_scope()
+        return inn
+
+    def on_class(self, cls: ControlClass, pos: TextPosition) -> ResNode:
+        if pos in cls.origin:
+            return cls
+        self.enter_scope(cls)
+        inn = self(cls.rest, pos)
+        self.exit_scope()
+        return inn
 
 
 def position_to_node(module: Module, position: TextPosition) -> ResNode:
     return it_cont(module.code, position)
 
 
-def position_to_node_with_scope(module: Module, position: TextPosition) -> tuple[RWValue | ControlABC, Scope]:
-    ...
-
-
-
-
+def position_to_node_with_scope(module: Module, position: TextPosition) -> tuple[ResNode, Scope]:
+    it = ItContScopes()
+    return it.start(module.code, module.scope, position)
 

@@ -172,7 +172,6 @@ class ItCont(IteratorControl):
         )
         self.on_code_block(cond.block_else, False)
 
-
     def on_while(self, while_: ControlWhile):
         self.on_expr(while_.condition, while_,
                      self.code_block[-1].block_parts.index(while_))

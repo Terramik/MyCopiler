@@ -253,7 +253,10 @@ class Type:
     def full_type(self) -> Type:
         """Возвращает полный тип без всяких typedef'ов"""
         if isinstance(self._simple, Type.SimpleTypeTypedef):
-            return self._simple.full_type
+            t = self._simple.full_type
+            while isinstance(t._simple, Type.SimpleTypeTypedef):
+                t = t._simple.full_type
+            return t
         elif isinstance(self._simple, Type.SimpleTypeFunc):
             return Type(Type.SimpleTypeFunc(
                 [t.full_type for t in self._simple.arguments],

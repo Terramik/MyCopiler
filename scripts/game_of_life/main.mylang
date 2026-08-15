@@ -29,8 +29,32 @@ def print_field(field_status bool_s2) {
 }
 
 
+class blob {
+    {xxx uint64;}
+    var clsf int64 = 1;
+    var clsffff int64 = 1;
+    var clsfgg2 int64 = 1;
+}
+
+enum en {
+    ar;
+    glag;
+    glob;
+    glllag;
+}
+var bbb blob;
+   bbb.clsfgg2;
+   bbb.xxx;
+   en.glob;
+stdout.print_b; 
+alias ___ uint8_s2;
+var _ ___;
+
+
+
 def update_field(field_status bool_s2, field_count uint8_s2) {
     var y uint64; var x uint64;
+
 
     # обнулим
     y = 0;
